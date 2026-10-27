@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Дария Кромберг">
+<meta name="description" content="Соберите свой букет в 3D-конструкторе АММА: цветы, зелень, упаковка и лента.">
+<meta name="robots" content="noindex, nofollow">
+<!--
+   Прототип сайта АММА: цветочный магазин, малый и крупный опт.
+   Откройте консоль (F12) — там вас ждут.
+   АММА · design & code: Дария Кромберг · Telegram @wlknalone
+-->
+<title>АММА — собрать свой букет в 3D</title>
+<link rel="icon" type="image/png" href="amma-icon-forest.png">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<style>
+[hidden]{display:none !important}
+body{margin:0;background:#F7F6F3;font-family:Manrope,Arial,sans-serif;color:#1F2124}
+a{color:#1F2124}a:hover{color:#2F6B4F}
+.glass{background:rgba(255,255,255,.46);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -10px 30px rgba(255,255,255,.2),0 12px 40px rgba(31,33,36,.07)}
+.page{position:relative;min-height:100vh;overflow:hidden}
+.blob{position:absolute;border-radius:999px;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 24px}
+.hdr{position:sticky;top:0;z-index:20;padding:16px 24px 0}
+.hdr header{max-width:1200px;margin:0 auto;border-radius:28px;padding:10px 10px 10px 28px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;box-sizing:border-box}
+.hdr nav{display:flex;flex-wrap:wrap;gap:0 24px;flex:1 1 400px;font-weight:700;font-size:15px}
+.hdr nav a{text-decoration:none;padding:12px 0}
+.eyebrow{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#2F6B4F;font-weight:700}
+.bq-layout{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;padding:24px 0 72px}
+.bq-stagebox{flex:1 1 520px;min-width:0;position:relative;border-radius:36px;height:min(72vh,680px);min-height:440px;overflow:hidden}
+#bq-stage{position:absolute;inset:0}
+#bq-canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#bq-canvas:active{cursor:grabbing}
+.bq-tools{position:absolute;left:16px;right:16px;top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;pointer-events:none}
+.bq-tools>div{display:flex;flex-wrap:wrap;gap:8px;pointer-events:auto}
+.bq-chip{min-height:40px;border-radius:999px;padding:0 16px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#1F2124}
+.bq-chip:hover{background:#FFFFFF}
+.bq-chip[aria-pressed="true"]{background:#1F2124;color:#FFFFFF;border-color:#1F2124}
+.bq-hint{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:13px;color:#4A4F56;pointer-events:none}
+#bq-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:18px;font-weight:700;color:#4A4F56;pointer-events:none;padding:24px}
+#bq-nogl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;font-size:16px;line-height:1.6}
+.bq-side{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.bq-box{border-radius:32px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.bq-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:6px;border-radius:24px}
+.bq-tab{flex:1 1 90px;min-height:44px;border:0;border-radius:999px;background:transparent;font:inherit;font-weight:700;font-size:14px;cursor:pointer;color:#1F2124}
+.bq-tab.is-on{background:#1F2124;color:#FFFFFF}
+#bq-panel{display:flex;flex-direction:column;gap:4px;max-height:430px;overflow:auto;padding-right:4px}
+.bq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 8px;border-bottom:1px solid rgba(31,33,36,.07)}
+.bq-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bq-name{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+.bq-note{font-size:13px;color:#6A6F76}
+.bq-swatches{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.bq-sw{position:relative;width:28px;height:28px;border-radius:999px;background:var(--c);border:2px solid rgba(31,33,36,.15);cursor:pointer;padding:0}
+.bq-swatches--big .bq-sw{width:40px;height:40px}
+.bq-sw.is-on{outline:3px solid #2F6B4F;outline-offset:2px;border-color:#FFFFFF}
+.bq-sw i{position:absolute;right:-6px;top:-6px;min-width:16px;height:16px;border-radius:999px;background:#1F2124;color:#FFFFFF;font-size:10px;font-style:normal;font-weight:800;line-height:16px;padding:0 3px;box-sizing:border-box}
+.bq-dot{width:14px;height:14px;border-radius:999px;background:var(--c);border:1px solid rgba(31,33,36,.2)}
+.bq-step{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.bq-round{width:40px;height:40px;border-radius:999px;border:1px solid rgba(31,33,36,.2);background:rgba(255,255,255,.7);font:inherit;font-size:20px;font-weight:700;cursor:pointer;color:#1F2124;line-height:1}
+.bq-round--dark{background:#1F2124;color:#FFFFFF;border-color:#1F2124}
+.bq-round:disabled{opacity:.35;cursor:default}
+.bq-count{min-width:26px;text-align:center;font-weight:800;font-size:16px}
+.bq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.bq-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px;border-radius:20px;border:1px solid rgba(31,33,36,.12);background:rgba(255,255,255,.6);font:inherit;font-weight:700;font-size:14px;cursor:pointer;color:#1F2124}
+.bq-card.is-on{border:2px solid #1F2124;background:#FFFFFF}
+.bq-paper{width:64px;height:64px;clip-path:polygon(10% 0,90% 0,62% 100%,38% 100%);background:var(--c);display:flex;align-items:center;justify-content:center;color:#6A6F76;border:1px solid rgba(31,33,36,.1)}
+.bq-textarea{width:100%;box-sizing:border-box;border:1px solid #8E928F;border-radius:14px;padding:12px 14px;font:inherit;font-size:15px;background:rgba(255,255,255,.75);resize:vertical}
+.bq-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px;font-weight:700}
+.bq-total b{font-size:24px;font-weight:800}
+.bq-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bq-chips span{font-size:12px;font-weight:700;background:rgba(255,255,255,.7);border:1px solid rgba(31,33,36,.08);border-radius:999px;padding:5px 10px}
+.bq-cta{display:flex;flex-wrap:wrap;gap:10px}
+.bq-cta button{flex:1 1 160px;min-height:54px;border-radius:999px;font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.bq-cta button:disabled{opacity:.4;cursor:default}
+#bq-cart{border:0;background:#1F2124;color:#FFFFFF}
+#bq-send{border:1px solid #1F2124;background:rgba(255,255,255,.5);color:#1F2124}
+#bq-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:50;background:rgba(31,33,36,.85);color:#FFFFFF;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:999px;padding:14px 22px;font-weight:700;font-size:15px;max-width:calc(100% - 48px);text-align:center}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid #2F6B4F;outline-offset:2px}
+@media (max-width:720px){.hdr nav{order:3;flex-basis:100%;flex-wrap:nowrap;overflow-x:auto;gap:0 20px}.hdr nav a{white-space:nowrap}.bq-stagebox{height:440px}}
+</style>
+<style>
+/* Подпись разработчика + пасхалка с драконом */
+.dk-credit{margin:0;padding:18px 24px 28px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#9CA1A8;letter-spacing:.02em}
+.dk-credit a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}
+.dk-credit a:hover{color:#FFFFFF}
+.dk-sig{display:inline-block;width:22px;height:24px;color:#C9CDD2;cursor:pointer;outline:none;transition:transform .5s cubic-bezier(.2,.8,.2,1),filter .3s,color .3s}
+.dk-sig svg{display:block;width:100%;height:100%}
+.dk-sig:hover,.dk-sig:focus-visible,.dk-sig.is-on{transform:rotate(-8deg) scale(1.08);color:#7c6bff;filter:drop-shadow(0 0 6px rgba(124,107,255,.55))}
+.dk-dragon{position:fixed;z-index:99999;pointer-events:none;image-rendering:pixelated;display:none}
+.dk-dragon.is-on{display:block}
+@media print{.dk-credit,.dk-dragon{display:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div aria-hidden="true">
+    <div class="blob" style="width:900px;height:900px;left:-280px;top:-220px;background:radial-gradient(circle,#F6E3E3 0%,rgba(246,227,227,0) 68%)"></div>
+    <div class="blob" style="width:820px;height:820px;right:-260px;top:260px;background:radial-gradient(circle,#DCEADF 0%,rgba(228,239,232,0) 68%)"></div>
+    <div class="blob" style="width:700px;height:700px;left:30%;top:900px;background:radial-gradient(circle,#F5EDD9 0%,rgba(245,237,217,0) 68%)"></div>
+  </div>
+
+  <div class="hdr">
+    <header class="glass">
+      <a href="index.html" style="display:flex;align-items:center;padding:8px 0"><img src="amma-wordmark-graphite.svg" alt="АММА — на главную" style="height:22px;width:auto;display:block"></a>
+      <nav aria-label="Разделы">
+        <a href="shop.html">Купить цветы</a>
+        <a href="florist.html">Флористам</a>
+        <a href="wholesale.html">Оптом из Китая</a>
+        <a href="builder.html" aria-current="page" style="color:#2F6B4F">Собрать букет</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px">
+        <a href="login.html" style="text-decoration:none;font-weight:700;font-size:15px;padding:12px">Войти</a>
+        <a href="shop.html" aria-label="Корзина" style="width:44px;height:44px;border-radius:999px;background:#1F2124;display:flex;align-items:center;justify-content:center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></a>
+      </div>
+    </header>
+  </div>
+
+  <main class="wrap">
+    <section style="padding:48px 0 8px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:660px">
+        <div style="font-size:14px;color:#6A6F76"><a href="index.html" style="color:#6A6F76">Главная</a> / <a href="shop.html" style="color:#6A6F76">Магазин</a> / Собрать букет</div>
+        <div class="eyebrow">3D-конструктор</div>
+        <h1 style="margin:0;font-size:clamp(36px,8vw,56px);line-height:1.04;font-weight:800;letter-spacing:-1.5px">Соберите свой букет</h1>
+        <p style="margin:0;font-size:17px;line-height:1.6;color:#4A4F56">Добавляйте цветы, зелень, упаковку и ленту — букет соберётся в 3D. Крутите его мышкой или пальцем. Флорист соберёт его по этой схеме из свежего прихода.</p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span style="font-size:14px;font-weight:700;color:#4A4F56">Начать с готового:</span><div id="bq-presets" style="display:flex;flex-wrap:wrap;gap:8px"></div></div>
+    </section>
+
+    <div class="bq-layout">
+      <div class="bq-stagebox glass">
+        <div id="bq-stage"><canvas id="bq-canvas" role="img" aria-label="3D-модель букета"></canvas></div>
+        <div id="bq-empty" hidden>Букет пока пустой — добавьте первый цветок справа</div>
+        <div id="bq-nogl" hidden>Ваш браузер не поддерживает 3D. Соберите букет в списке справа — флорист увидит состав.</div>
+        <div class="bq-tools">
+          <div><button type="button" class="bq-chip" id="bq-random">Случайный букет</button><button type="button" class="bq-chip" id="bq-reset">Сбросить</button></div>
+          <div><button type="button" class="bq-chip" id="bq-auto" aria-pressed="true">Вращение</button><button type="button" class="bq-chip" id="bq-photo">Сохранить фото</button></div>
+        </div>
+        <div class="bq-hint">Потяните, чтобы повернуть · колесо или щипок — приблизить</div>
+      </div>
+
+      <div class="bq-side">
+        <div class="bq-tabs glass" role="tablist" aria-label="Шаги">
+          <button type="button" class="bq-tab is-on" role="tab" aria-selected="true" data-bq-tab="flowers">1 · Цветы</button>
+          <button type="button" class="bq-tab" role="tab" aria-selected="false" data-bq-tab="greens">2 · Зелень</button>
+          <button type="button" class="bq-tab" role="tab" aria-selected="false" data-bq-tab="wrap">3 · Упаковка</button>
+          <button type="button" class="bq-tab" role="tab" aria-selected="false" data-bq-tab="ribbon">4 · Лента</button>
+        </div>
+        <div class="bq-box glass"><div id="bq-panel"></div></div>
+        <div class="bq-box glass">
+          <div id="bq-summary" aria-live="polite"></div>
+          <div class="bq-cta"><button type="button" id="bq-cart">В корзину</button><button type="button" id="bq-send">Отправить флористу</button></div>
+          <div style="font-size:13px;line-height:1.5;color:#6A6F76">Если какого-то цветка не окажется в приходе, флорист предложит замену того же оттенка до сборки.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="position:relative;z-index:1;background:#1F2124;color:#C9CDD2">
+    <div style="max-width:1200px;margin:0 auto;padding:40px 24px;display:flex;flex-wrap:wrap;gap:16px 32px;justify-content:space-between;align-items:center">
+      <img src="amma-wordmark-white.svg" alt="АММА" style="height:24px;width:auto">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 24px;font-size:15px">
+        <a href="tel:+79684005380" style="color:#FFFFFF;text-decoration:none;font-weight:700">+7 968 400 5380</a>
+        <a href="mailto:manager@ammaflowers.ru" style="color:#C9CDD2;text-decoration:none">manager@ammaflowers.ru</a>
+      </div>
+    </div>
+  
+  <div class="dk-credit">Сайт создан <a href="https://darindakepstar-pixel.github.io/daria-kromberg/" target="_blank" rel="noopener">Дарией Кромберг</a><span class="dk-sig" data-dk-dragon tabindex="0" role="img" aria-label="Подпись Дарии Кромберг"><svg viewBox="95 44 751 826" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M 368.308 69.010 C 362.559 71.326, 362.056 74.567, 363.424 100.500 C 364.157 114.387, 364.130 114.657, 360.048 134 C 353.745 163.869, 347.549 186.757, 341.406 202.865 C 331.944 227.674, 330.107 233.313, 326.985 247.135 C 325.325 254.486, 321.935 266.617, 319.453 274.093 C 316.970 281.569, 313.422 294.881, 311.569 303.674 C 307.873 321.205, 305.190 328.801, 298.293 341.259 C 291.401 353.706, 289.571 359.533, 284.539 385.061 C 276.473 425.977, 271.929 436.261, 261.284 437.689 C 250.778 439.098, 242.292 429.658, 231.435 404.485 C 228.432 397.521, 221.311 382.075, 215.611 370.161 C 189.719 316.041, 189.106 314.552, 186.545 299.460 C 182.511 275.688, 173.969 251.312, 166.788 243.084 C 141.531 214.142, 119.524 210.830, 119.718 236 C 119.902 259.854, 130.198 302.437, 142.203 329 C 158.693 365.484, 173.183 393.610, 186.510 415 C 190.450 421.325, 196.067 430.550, 198.991 435.500 C 201.916 440.450, 209.443 452.110, 215.719 461.412 C 242.367 500.905, 243.284 512.638, 223.035 554.964 C 204.813 593.052, 203.754 610.301, 218.785 624.156 C 230.030 634.522, 237.273 635.302, 274.688 630.176 C 315.311 624.612, 319.924 625.967, 338.441 648.896 C 347.907 660.617, 374.988 701.744, 382.957 716.500 C 393.012 735.120, 397.893 743.393, 408.030 759 C 418.561 775.214, 427.093 790.195, 436.506 809 C 452.411 840.778, 470.858 853.196, 484.355 841.212 C 489.323 836.800, 491.406 825.602, 488.922 816.658 C 484.708 801.483, 457.938 747.433, 446.974 731.965 C 442.505 725.659, 435.656 715.100, 431.755 708.500 C 420.015 688.638, 408.829 672.081, 399.835 661.255 C 388.309 647.381, 385.571 642.225, 385.531 634.318 C 385.463 620.690, 392.339 618.229, 425.997 619.839 C 438.923 620.457, 503.275 621.220, 569 621.535 C 634.725 621.850, 695.250 622.516, 703.500 623.016 C 747.157 625.662, 808.554 624.942, 814.662 621.712 C 826.046 615.692, 823.661 602.972, 810.051 597.117 C 797.307 591.635, 767.434 584.982, 744.439 582.504 C 736.222 581.619, 718.475 579.534, 705 577.870 C 689.092 575.907, 674.363 574.722, 663 574.491 C 639.706 574.019, 511.451 572.188, 507 572.264 C 505.075 572.297, 474.025 572.341, 438 572.362 C 401.975 572.383, 367.550 572.415, 361.500 572.435 C 345.135 572.487, 340.180 569.415, 324.310 549.374 C 310.588 532.045, 300.275 513.032, 296.397 497.911 C 293.251 485.645, 295.955 473.083, 306.105 452.812 C 310.162 444.709, 320.121 421.676, 331.749 393.500 C 333.111 390.200, 336.584 380.750, 339.467 372.500 C 342.350 364.250, 346.531 353.225, 348.759 348 C 352.424 339.403, 370.171 287.178, 384.269 243.500 C 387.288 234.150, 393.450 218.400, 397.964 208.500 C 411.125 179.637, 423 137.716, 423 120.119 C 423 97.078, 385.537 62.070, 368.308 69.010"/></svg></span></div>
+</footer>
+</div>
+<div id="bq-toast" role="status" hidden></div>
+<script type="module" src="builder.js"></script>
+<script>
+/* ══ Подпись Дарии Кромберг: при наведении/нажатии из подписи поднимается пиксельный дракон.
+      И привет тем, кто открыл консоль. ══ */
+(function () {
+  var DRAGON = [
+    '.....................h...h..........f.y.....',
+    '.....................hb..hb........fyf.y....',
+    'v.....................bbbbb.......ffy.f.....',
+    'vv...................bbbebbbb....fyf........',
+    '.vv.................bbbbbbbbbbbff...........',
+    '.vwv................bbbbbaabbbf.........v...',
+    '..vwv...............bbbb...aa..........vv...',
+    '..vwwv...............bbbb.............vwv...',
+    '...vwwv...............bbb............vwwv...',
+    '...vwwwv..............bbbb..........vwwv....',
+    '....vwwwv..............bbb.........vwwwv....',
+    '....vwwwwv.............bbbb.......vwwwv.....',
+    '.....vwwwwv.............bbb......vwwwwv.....',
+    '.....vwwwwwv...........cbbb.....vwwwwv......',
+    '......vwwwwwv.........ccbbb....vwwwwwv......',
+    '......vwwwwwwv.......ccbbbbb..vwwwwwv.......',
+    '.......vwwwwwwvv....ccbbbbbbbvwwwwwwv.......',
+    '.......vwwwwwwwwvv.ccbbbbbbbbbwwwwwv........',
+    '........vwwwwwwwwwbcbbbbbbbbbwwwwwv.........',
+    '........vwwvwwwvwwbcbbbbbbbbbwwvwwv.........',
+    '.........vv.vwv.vvbccbbbbbbbbvv.vv..........',
+    '..........v..v....bccbbbbbbbb...............',
+    '..................bccbbbbbbab...............',
+    '..................bbccbbbbbab...............',
+    '.................bb.ccbbbbab.bb.............',
+    '................bb..bccbbbb...bb............',
+    '...............hh...bbcbbbb....hh...........',
+    '.....................bbbbbb.................',
+    '......................bbbbb.................',
+    '.......................bbbb.................',
+    '........................bbb.................',
+    '........................bbb.................',
+    '.......................bbb..................',
+    '......................bbb...................',
+    '....................bbbb....................',
+    '..................bbbb......................',
+    '.................bbb........................',
+    '.................bb.........................',
+    '..................bb........................',
+    '...................bhh......................'
+  ];
+  var PAL = { b:'#7c6bff', a:'#463a82', c:'#b9f0e6', e:'#e7c27a', f:'#ffaa5a', y:'#ffe08a', h:'#dcd7f0', w:'#342c64', v:'#96c8e6' };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cv = null, ctx = null, S = 4, running = false, hold = false, PIX = [];
+  DRAGON.forEach(function (row, y) {
+    for (var x = 0; x < row.length; x++) if (row[x] !== '.') PIX.push({ x:x, y:y, ch:row[x], wing: row[x]==='w'||row[x]==='v',
+      ax: x + (Math.random()-.5)*16, ay: 41 + Math.random()*2, delay: (39-y)/39*1100 + Math.random()*350, fx: (Math.random()-.5)*6 });
+  });
+  function hex(c){ return [1,3,5].map(function(i){ return parseInt(c.slice(i,i+2),16); }); }
+  function mix(a,b,k){ a=hex(a); b=hex(b); return 'rgb('+[0,1,2].map(function(i){ return Math.round(a[i]+(b[i]-a[i])*k); }).join(',')+')'; }
+  function cl(k){ return k<0?0:k>1?1:k; }
+  function px(x,y,col,al,sz){ sz=sz||S; ctx.globalAlpha=al; ctx.fillStyle=col; ctx.fillRect(Math.round(x*S+(S-sz)/2), Math.round(y*S+(S-sz)/2), sz, sz); }
+  function fly(anchor, auto) {
+    if (running || reduce) return;
+    running = true;
+    if (!cv) { cv = document.createElement('canvas'); cv.className = 'dk-dragon'; cv.setAttribute('aria-hidden','true'); document.body.appendChild(cv); ctx = cv.getContext('2d'); }
+    var dpr = Math.min(2, window.devicePixelRatio||1), css = innerWidth < 700 ? 3 : 4;
+    S = css*dpr; cv.width = 44*S; cv.height = 44*S; cv.style.width = 44*css+'px'; cv.style.height = 44*css+'px';
+    var r = anchor && anchor.offsetParent ? anchor.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight-20, width: 0 };
+    cv.style.left = Math.max(8, Math.min(innerWidth - 44*css - 8, r.left + r.width/2 - 22*css)) + 'px';
+    cv.style.top = Math.max(8, r.top - 44*css + 4) + 'px';
+    cv.classList.add('is-on');
+    if (anchor) anchor.classList.add('is-on');
+    var t0 = performance.now(), RISE = 2000, LIVE = auto ? 3500 : 2200, FALL = 1800, liveEnd = null;
+    (function frame(now) {
+      var t = now - t0; ctx.clearRect(0,0,cv.width,cv.height);
+      if (t < RISE) PIX.forEach(function (p) {
+        var k = 1 - Math.pow(1 - cl((t-p.delay)/900), 3);
+        if (k <= 0) { if (Math.random() < .3) px(p.ax, p.ay, '#ffaa5a', .5, S*.5); return; }
+        px(p.ax+(p.x-p.ax)*k + Math.sin(k*6+p.fx)*(1-k)*1.2, p.ay+(p.y-p.ay)*k, k<1?mix('#ffaa5a',PAL[p.ch],k*k):PAL[p.ch], .35+k*.65, k<1?S*(.5+k*.5):S);
+      });
+      else if (liveEnd === null && (hold || t < RISE + LIVE)) {
+        var flap = 1 - .42*Math.pow(Math.sin((t - RISE)/210),2);
+        PIX.forEach(function (p) {
+          if ((p.ch==='f'||p.ch==='y') && Math.random() < .25) return;
+          px(p.x, Math.round(p.wing ? 17+(p.y-17)*flap : p.y), PAL[p.ch], 1);
+        });
+      } else {
+        if (liveEnd === null) liveEnd = t;
+        var ft = t - liveEnd;
+        if (ft < FALL) PIX.forEach(function (p) {
+          var k = cl((ft - p.y*18 - Math.random()*60)/1100);
+          px(p.x + p.fx*k, p.y + k*k*(42-p.y), mix(PAL[p.ch],'#3a3646',Math.min(1,k*1.6)), 1-k*.9);
+        });
+        else { ctx.clearRect(0,0,cv.width,cv.height); cv.classList.remove('is-on'); if (anchor) anchor.classList.remove('is-on'); running = false; return; }
+      }
+      ctx.globalAlpha = 1; requestAnimationFrame(frame);
+    })(t0);
+  }
+  window.dkBind = function () { document.querySelectorAll('[data-dk-dragon]').forEach(function (el) {
+    if (el.dataset.dkBound) return; el.dataset.dkBound = '1';
+    el.addEventListener('mouseenter', function () { hold = true; fly(el); });
+    el.addEventListener('mouseleave', function () { hold = false; });
+    el.addEventListener('click', function (e) { e.preventDefault(); hold = false; fly(el, true); });
+    el.addEventListener('keydown', function (e) { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); fly(el, true); } });
+  }); };
+  window.dkBind();
+
+  // ── для тех, кто заглянул в консоль ──
+  try {
+    var art = DRAGON.filter(function (_, i) { return i % 2 === 0; }).map(function (row) {
+      return row.replace(/[bac]/g,'█').replace(/[wv]/g,'▓').replace(/[efyh]/g,'▒').replace(/\./g,' ').replace(/\s+$/,'');
+    }).join('\n');
+    console.log('%c' + art, 'font:9px/1 monospace;color:#7c6bff');
+    console.log('%cПривет, исследователь 🐉', 'font:600 15px/1.5 Georgia,serif;color:#7c6bff');
+    console.log('%cЭто прототип сайта АММА: магазин, малый и крупный опт.\n' +
+      'Дизайн и код — Дария Кромберг. Предложения и вопросы: Telegram @wlknalone.\n' +
+      'А пока можно позвать дракона: наберите  dragon()', 'font:13px/1.6 system-ui,sans-serif;color:#6b716d');
+    console.log('%cАММА · design & code — Дария Кромберг', 'font:italic 12px Georgia,serif;color:#9a8fe0');
+    window.dragon = function () { fly(document.querySelector('.dk-sig'), true); return '🐉 Улетел. Возвращайтесь к цветам 🌷'; };
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
