@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Дария Кромберг">
+<meta name="description" content="Оптовые поставки цветов и растений из Китая под заказ — АММА.">
+<meta name="robots" content="noindex, nofollow">
+<!--
+   Прототип сайта АММА: цветочный магазин, малый и крупный опт.
+   Откройте консоль (F12) — там вас ждут.
+   АММА · design & code: Дария Кромберг · Telegram @wlknalone
+-->
+<title>АММА — оптовые поставки из Китая</title>
+<link rel="icon" type="image/png" href="assets/amma-icon-forest.png">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F7F6F3}
+a{color:#1F2124}a:hover{color:#2F6B4F}
+.glass{background:rgba(255,255,255,.46);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -10px 30px rgba(255,255,255,.2),0 12px 40px rgba(31,33,36,.07)}
+.glass-dark{background:rgba(31,33,36,.66);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 16px 48px rgba(31,33,36,.18)}
+@keyframes amma-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes amma-floor{0%,100%{transform:scaleX(1);opacity:.3}50%{transform:scaleX(.78);opacity:.16}}
+.floaty{animation:amma-float 7s ease-in-out infinite}
+.floor{animation:amma-floor 7s ease-in-out infinite}
+.lift{transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.prod:hover .lift{transform:translateY(-12px) scale(1.04)}
+@media (max-width:720px){header nav{order:3;flex-basis:100% !important;flex-wrap:nowrap !important;overflow-x:auto;gap:0 20px !important}header nav a{white-space:nowrap}}
+@media (prefers-reduced-motion:reduce){.floaty,.floor{animation:none}}
+</style>
+<style>
+/* Подпись разработчика + пасхалка с драконом */
+.dk-credit{margin:0;padding:18px 24px 28px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#9CA1A8;letter-spacing:.02em}
+.dk-credit a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor}
+.dk-credit a:hover{color:#FFFFFF}
+.dk-sig{display:inline-block;width:22px;height:24px;color:#C9CDD2;cursor:pointer;outline:none;transition:transform .5s cubic-bezier(.2,.8,.2,1),filter .3s,color .3s}
+.dk-sig svg{display:block;width:100%;height:100%}
+.dk-sig:hover,.dk-sig:focus-visible,.dk-sig.is-on{transform:rotate(-8deg) scale(1.08);color:#7c6bff;filter:drop-shadow(0 0 6px rgba(124,107,255,.55))}
+.dk-dragon{position:fixed;z-index:99999;pointer-events:none;image-rendering:pixelated;display:none}
+.dk-dragon.is-on{display:block}
+@media print{.dk-credit,.dk-dragon{display:none!important}}
+</style>
+</head>
+<body>
+<div style="position: relative; font-family: Manrope, Arial, sans-serif; color: #1F2124; background: #F7F6F3; min-height: 100vh; overflow: hidden">
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+    <div style="position: absolute; width: 1000px; height: 1000px; right: -300px; top: -260px; border-radius: 999px; background: radial-gradient(circle, #DCEADF 0%, rgba(228,239,232,0) 66%)"></div>
+    <div style="position: absolute; width: 800px; height: 800px; left: -260px; top: 900px; border-radius: 999px; background: radial-gradient(circle, #F5EDD9 0%, rgba(245,237,217,0) 68%)"></div>
+    <div style="position: absolute; width: 800px; height: 800px; right: -220px; top: 1900px; border-radius: 999px; background: radial-gradient(circle, #F6E3E3 0%, rgba(246,227,227,0) 68%)"></div>
+    <div style="position: absolute; width: 760px; height: 760px; left: 10%; top: 2600px; border-radius: 999px; background: radial-gradient(circle, #DCEADF 0%, rgba(228,239,232,0) 68%)"></div>
+  </div>
+
+  <div style="position: sticky; top: 0; z-index: 20; padding: 16px 24px 0">
+    <header class="glass" style="max-width: 1200px; margin: 0 auto; border-radius: 28px; padding: 10px 10px 10px 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; box-sizing: border-box">
+      <a href="index.html" style="display: flex; align-items: center; padding: 8px 0"><img src="assets/amma-wordmark-graphite.svg" alt="АММА — на главную" style="height: 22px; width: auto; display: block"></a>
+      <nav aria-label="Разделы" style="display: flex; flex-wrap: wrap; gap: 0 24px; flex: 1 1 400px; font-weight: 700; font-size: 15px">
+        <a href="shop.html" style="text-decoration: none; padding: 12px 0">Купить цветы</a>
+        <a href="florist.html" style="text-decoration: none; padding: 12px 0">Флористам</a>
+        <a href="wholesale.html" aria-current="page" style="text-decoration: none; padding: 12px 0; color: #2F6B4F">Оптом из Китая</a>
+        <a href="shop.html" style="text-decoration: none; padding: 12px 0">Сад и уход</a>
+      </nav>
+      <a href="wholesale.html" style="text-decoration: none; background: #1F2124; color: #FFFFFF; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 15px">Личный кабинет</a>
+    </header>
+  </div>
+
+  <section style="position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 96px 24px 64px; display: flex; flex-wrap: wrap; align-items: center; gap: 48px">
+    <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 22px">
+      <div style="font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: #2F6B4F; font-weight: 700">Крупный опт · Россия и СНГ</div>
+      <h1 style="margin: 0; font-size: clamp(38px, 9vw, 62px); line-height: 1.03; font-weight: 800; letter-spacing: -1.5px">Поставки цветов и растений из Китая под заказ</h1>
+      <p style="margin: 0; font-size: 19px; line-height: 1.6; color: #4A4F56; max-width: 560px">Закупаем на фермах Юньнани, проверяем качество до отправки и везём в своих рефрижераторах. Документы и таможня на нас.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px">
+        <a href="#calc" style="text-decoration: none; background: #1F2124; color: #FFFFFF; border-radius: 999px; padding: 16px 28px; font-weight: 700">Рассчитать поставку</a>
+        <a href="#range" class="glass" style="text-decoration: none; color: #1F2124; border-radius: 999px; padding: 15px 28px; font-weight: 700">Запросить прайс</a>
+      </div>
+    </div>
+    <div style="flex: 1 1 400px; position: relative; height: 460px">
+      <div class="prod" style="position: absolute; left: 14%; top: 60px; width: 300px; height: 300px">
+        <div class="lift" style="width: 100%; height: 100%"><div class="floaty" style="width: 100%; height: 100%">
+          <svg role="img" aria-label="Коробка поставки с QR-кодом" viewBox="0 0 200 200" width="100%" height="100%"><path d="M100 30L172 64V140L100 174L28 140V64Z" fill="#E7D6BC"/><path d="M100 30L172 64L100 98L28 64Z" fill="#F0E3CC"/><path d="M100 98V174" stroke="rgba(0,0,0,.08)" stroke-width="2"/><path d="M28 64L100 98L172 64" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="2"/><path d="M64 47L136 81" stroke="#C9B48E" stroke-width="10"/><rect x="40" y="96" width="34" height="34" fill="#FFFFFF" transform="skewY(25)" style="transform-origin: 40px 96px"/><path d="M45 103h8v8h-8zM61 111h8v8h-8zM45 119h8v8h-8z" fill="#1F2124" transform="skewY(25)" style="transform-origin: 40px 96px"/><path d="M118 118l22-10M118 128l30-14" stroke="#1F4030" stroke-width="4" stroke-linecap="round"/></svg>
+        </div></div>
+        <div class="floor" style="position: absolute; left: 22%; right: 22%; bottom: -24px; height: 22px; border-radius: 999px; background: radial-gradient(ellipse, rgba(31,33,36,.5) 0%, rgba(31,33,36,0) 70%)"></div>
+      </div>
+      <div class="glass" style="position: absolute; right: 0; top: 30px; border-radius: 22px; padding: 16px 20px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 800">900+</span><span style="font-size: 13px; color: #4A4F56">горшечных позиций</span></div>
+      <div class="glass" style="position: absolute; left: 0; top: 0; border-radius: 22px; padding: 16px 20px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 800">от 1 паллеты</span><span style="font-size: 13px; color: #4A4F56">без выкупа машины</span></div>
+      <div class="glass" style="position: absolute; right: 6%; bottom: 20px; border-radius: 22px; padding: 16px 20px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 800">≈ 7 дней</span><span style="font-size: 13px; color: #4A4F56">Куньмин → Москва</span></div>
+      <div class="glass" style="position: absolute; left: 4%; bottom: 40px; border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 999px; background: #2F6B4F"></span>2 камеры: +2…+5 °C и для горшечных</div>
+    </div>
+  </section>
+
+  <section style="position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; display: flex; flex-direction: column; gap: 36px">
+    <h2 style="margin: 0; font-size: 40px; line-height: 1.1; font-weight: 800; letter-spacing: -1px">Как проходит поставка</h2>
+    <ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px">
+      
+        <li class="glass" style="border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 22px; font-weight: 800; color: #2F6B4F">01</div>
+          <div style="font-weight: 800; font-size: 17px">Заявка</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #4A4F56">Сорта, объёмы и дата — менеджер присылает расчёт</div>
+        </li>
+      
+
+        <li class="glass" style="border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 22px; font-weight: 800; color: #2F6B4F">02</div>
+          <div style="font-weight: 800; font-size: 17px">Закупка</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #4A4F56">Выбираем цветы на фермах и рынке Доунань</div>
+        </li>
+      
+
+        <li class="glass" style="border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 22px; font-weight: 800; color: #2F6B4F">03</div>
+          <div style="font-weight: 800; font-size: 17px">Контроль качества</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #4A4F56">Проверяем и упаковываем на своём складе</div>
+        </li>
+      
+
+        <li class="glass" style="border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 22px; font-weight: 800; color: #2F6B4F">04</div>
+          <div style="font-weight: 800; font-size: 17px">Отгрузка</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #4A4F56">Каждая коробка с QR-кодом, рефрижератор +2…+5 °C</div>
+        </li>
+      
+
+        <li class="glass" style="border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 22px; font-weight: 800; color: #2F6B4F">05</div>
+          <div style="font-weight: 800; font-size: 17px">Таможня</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #4A4F56">Документы и фитосанитарию оформляем сами</div>
+        </li>
+      
+
+        <li class="glass" style="border-radius: 26px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 22px; font-weight: 800; color: #2F6B4F">06</div>
+          <div style="font-weight: 800; font-size: 17px">Доставка</div>
+          <div style="font-size: 14px; line-height: 1.55; color: #4A4F56">До вашего склада в России или СНГ</div>
+        </li>
+      
+    </ol>
+  </section>
+
+  <section id="range" style="position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 96px; display: flex; flex-direction: column; gap: 48px">
+    <h2 style="margin: 0; font-size: 40px; line-height: 1.1; font-weight: 800; letter-spacing: -1px">Что везём</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 48px 32px">
+      <div class="prod" style="display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center">
+        <div style="position: relative; width: 66%; aspect-ratio: 5 / 6">
+          <div class="lift" style="width: 100%; height: 100%"><div class="floaty" style="width: 100%; height: 100%">
+            <svg aria-hidden="true" viewBox="0 0 200 240" width="100%" height="100%"><path d="M100 124C58 96 38 62 44 28 70 48 90 82 100 124Z" fill="#5E8F5C"/><path d="M100 124C142 96 162 62 156 28 130 48 110 82 100 124Z" fill="#4F7F55"/><circle cx="70" cy="80" r="26" fill="#F4C9D2"/><circle cx="130" cy="80" r="26" fill="#F0A35E"/><circle cx="100" cy="62" r="30" fill="#C8324A"/><circle cx="82" cy="104" r="24" fill="#FFFFFF" stroke="rgba(0,0,0,.06)"/><circle cx="118" cy="104" r="24" fill="#EDB8C2"/><path d="M50 112H150L112 228H88Z" fill="#E7D6BC"/><path d="M86 178H114" stroke="#1F2124" stroke-width="6" stroke-linecap="round"/></svg>
+          </div></div>
+          <div class="floor" style="position: absolute; left: 26%; right: 26%; bottom: -14px; height: 18px; border-radius: 999px; background: radial-gradient(ellipse, rgba(31,33,36,.5) 0%, rgba(31,33,36,0) 70%)"></div>
+        </div>
+        <div style="font-size: 24px; font-weight: 800">Срезка</div>
+        <div style="font-size: 15px; line-height: 1.6; color: #4A4F56; max-width: 320px">Розы, гвоздики, хризантемы, альстромерии и редкие сорта</div>
+        <a href="#calc" class="glass" style="text-decoration: none; border-radius: 999px; padding: 12px 22px; font-weight: 700">Запросить прайс</a>
+      </div>
+      <div class="prod" style="display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center">
+        <div style="position: relative; width: 66%; aspect-ratio: 5 / 6">
+          <div class="lift" style="width: 100%; height: 100%"><div class="floaty" style="width: 100%; height: 100%; animation-delay: -2.3s">
+            <svg aria-hidden="true" viewBox="0 0 200 240" width="100%" height="100%"><path d="M100 150C100 120 98 96 94 66" stroke="#4F7F55" stroke-width="4" fill="none"/><path d="M100 150C104 124 116 104 132 92" stroke="#4F7F55" stroke-width="4" fill="none"/><path d="M58 124C28 104 34 62 62 68 72 56 94 66 88 94 84 112 70 120 58 124Z" fill="#4F7F55"/><path d="M142 120C172 100 166 58 138 64 128 52 106 62 112 90 116 108 130 116 142 120Z" fill="#5E8F5C"/><path d="M96 58C78 46 74 26 92 24 100 14 120 22 112 40 108 52 102 56 96 58Z" fill="#C8324A"/><path d="M100 46L108 28" stroke="#E9D9A8" stroke-width="4" stroke-linecap="round"/><rect x="58" y="144" width="84" height="14" rx="4" fill="#FFFFFF" stroke="#E2E0DC"/><path d="M64 158H136L128 228H72Z" fill="#FFFFFF" stroke="#E2E0DC"/></svg>
+          </div></div>
+          <div class="floor" style="position: absolute; left: 26%; right: 26%; bottom: -14px; height: 18px; border-radius: 999px; background: radial-gradient(ellipse, rgba(31,33,36,.5) 0%, rgba(31,33,36,0) 70%); animation-delay: -2.3s"></div>
+        </div>
+        <div style="font-size: 24px; font-weight: 800">Горшечные растения</div>
+        <div style="font-size: 15px; line-height: 1.6; color: #4A4F56; max-width: 320px">900+ позиций. Можем дорастить в нашей теплице к нужной дате</div>
+        <a href="#calc" class="glass" style="text-decoration: none; border-radius: 999px; padding: 12px 22px; font-weight: 700">Запросить прайс</a>
+      </div>
+      <div class="prod" style="display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center">
+        <div style="position: relative; width: 66%; aspect-ratio: 5 / 6">
+          <div class="lift" style="width: 100%; height: 100%"><div class="floaty" style="width: 100%; height: 100%; animation-delay: -4.6s">
+            <svg aria-hidden="true" viewBox="0 0 200 240" width="100%" height="100%"><rect x="46" y="70" width="34" height="140" rx="17" fill="#E7D6BC"/><ellipse cx="63" cy="70" rx="17" ry="6" fill="#F0E3CC"/><rect x="86" y="96" width="34" height="114" rx="17" fill="#F4C9D2"/><ellipse cx="103" cy="96" rx="17" ry="6" fill="#F8DCE2"/><path d="M128 150H168L162 210H134Z" fill="#FFFFFF" stroke="#E2E0DC"/><rect x="124" y="142" width="48" height="10" rx="3" fill="#FFFFFF" stroke="#E2E0DC"/><path d="M140 60L150 132M150 132L144 140M150 132L158 138" stroke="#1F2124" stroke-width="5" stroke-linecap="round"/><circle cx="140" cy="58" r="8" fill="none" stroke="#2F6B4F" stroke-width="5"/></svg>
+          </div></div>
+          <div class="floor" style="position: absolute; left: 26%; right: 26%; bottom: -14px; height: 18px; border-radius: 999px; background: radial-gradient(ellipse, rgba(31,33,36,.5) 0%, rgba(31,33,36,0) 70%); animation-delay: -4.6s"></div>
+        </div>
+        <div style="font-size: 24px; font-weight: 800">Сопутка, горшки, инструмент</div>
+        <div style="font-size: 15px; line-height: 1.6; color: #4A4F56; max-width: 320px">Упаковка, кашпо, флористический и садовый инструмент коробками</div>
+        <a href="#calc" class="glass" style="text-decoration: none; border-radius: 999px; padding: 12px 22px; font-weight: 700">Запросить прайс</a>
+      </div>
+    </div>
+  </section>
+
+  <section style="position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 96px">
+    <div class="glass" style="border-radius: 36px; padding: 48px; display: flex; flex-wrap: wrap; gap: 32px; align-items: center">
+      <div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px">
+        <div style="font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: #2F6B4F; font-weight: 700">Шоурум и теплица в Москве</div>
+        <h2 style="margin: 0; font-size: 34px; line-height: 1.12; font-weight: 800; letter-spacing: -0.5px">Посмотрите растения вживую до первой поставки</h2>
+        <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #4A4F56">Покажем ассортимент, теплицу и склад, обсудим объёмы и график поставок.</p>
+      </div>
+      <a href="#calc" style="text-decoration: none; background: #1F4030; color: #F6EFDE; border-radius: 999px; padding: 16px 28px; font-weight: 700">Записаться на визит</a>
+    </div>
+  </section>
+
+  <section id="calc" style="position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 96px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+    <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 16px">
+      <h2 style="margin: 0; font-size: 40px; line-height: 1.1; font-weight: 800; letter-spacing: -1px">Рассчитать поставку</h2>
+      <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A4F56">Менеджер пришлёт прайс и расчёт с доставкой до вашего города в течение рабочего дня.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 16px; margin-top: 8px">
+        <a href="tel:+79684005380" style="font-weight: 800; text-decoration: none; font-size: 20px">+7 968 400 5380</a>
+        <span style="color: #4A4F56">Telegram и WhatsApp</span>
+        <a href="mailto:manager@ammaflowers.ru">manager@ammaflowers.ru</a>
+      </div>
+    </div>
+    <form class="glass" style="flex: 2 1 520px; border-radius: 32px; padding: 36px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; box-sizing: border-box">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="w-company" style="font-weight: 700; font-size: 15px">Компания</label>
+        <input id="w-company" type="text" style="height: 48px; box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 0 14px; font: inherit; background: rgba(255,255,255,.7)">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="w-city" style="font-weight: 700; font-size: 15px">Город доставки</label>
+        <input id="w-city" type="text" style="height: 48px; box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 0 14px; font: inherit; background: rgba(255,255,255,.7)">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="w-name" style="font-weight: 700; font-size: 15px">Имя</label>
+        <input id="w-name" type="text" style="height: 48px; box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 0 14px; font: inherit; background: rgba(255,255,255,.7)">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="w-phone" style="font-weight: 700; font-size: 15px">Телефон или Telegram</label>
+        <input id="w-phone" type="text" style="height: 48px; box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 0 14px; font: inherit; background: rgba(255,255,255,.7)">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="w-what" style="font-weight: 700; font-size: 15px">Что интересует</label>
+        <select id="w-what" style="height: 48px; box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 0 14px; font: inherit; background: rgba(255,255,255,.7)">
+          <option>Срезка</option>
+          <option>Горшечные растения</option>
+          <option>Сопутка и инструмент</option>
+          <option>Всё сразу</option>
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="w-vol" style="font-weight: 700; font-size: 15px">Объём в месяц</label>
+        <select id="w-vol" style="height: 48px; box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 0 14px; font: inherit; background: rgba(255,255,255,.7)">
+          <option>1–2 паллеты</option>
+          <option>3–10 паллет</option>
+          <option>Машина и больше</option>
+          <option>Пока не знаю</option>
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; grid-column: 1 / -1">
+        <label for="w-msg" style="font-weight: 700; font-size: 15px">Комментарий</label>
+        <textarea id="w-msg" rows="3" placeholder="Какие сорта, к какой дате, особые требования" style="box-sizing: border-box; border: 1px solid #8E928F; border-radius: 14px; padding: 12px 14px; font: inherit; background: rgba(255,255,255,.7); resize: vertical"></textarea>
+      </div>
+      <label style="grid-column: 1 / -1; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: #4A4F56"><input type="checkbox" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #2F6B4F">Согласен на обработку персональных данных по <a href="index.html">политике</a></label>
+      <button type="button" style="grid-column: 1 / -1; min-height: 56px; border: 0; border-radius: 999px; background: #1F2124; color: #FFFFFF; font: inherit; font-weight: 700; font-size: 17px; cursor: pointer">Получить расчёт</button>
+    </form>
+  </section>
+
+  <section style="position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 96px; display: flex; flex-direction: column; gap: 24px">
+    <h2 style="margin: 0; font-size: 28px; font-weight: 800">Документы</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
+      <a href="wholesale.html" class="glass" style="text-decoration: none; border-radius: 22px; padding: 20px 22px; display: flex; align-items: center; gap: 14px; font-weight: 700">
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F6B4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M12 11v6M9 14l3 3 3-3"/></svg>Презентация компании, PDF
+      </a>
+      <a href="wholesale.html" class="glass" style="text-decoration: none; border-radius: 22px; padding: 20px 22px; display: flex; align-items: center; gap: 14px; font-weight: 700">
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F6B4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M12 11v6M9 14l3 3 3-3"/></svg>Образец договора поставки
+      </a>
+      <a href="wholesale.html" class="glass" style="text-decoration: none; border-radius: 22px; padding: 20px 22px; display: flex; align-items: center; gap: 14px; font-weight: 700">
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F6B4F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M12 11v6M9 14l3 3 3-3"/></svg>Реквизиты компании
+      </a>
+    </div>
+  </section>
+
+  <footer style="position: relative; z-index: 1; background: #1F2124; color: #C9CDD2">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; gap: 16px 32px; justify-content: space-between; align-items: center">
+      <img src="assets/amma-wordmark-white.svg" alt="АММА" style="height: 24px; width: auto">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 15px">
+        <a href="tel:+79684005380" style="color: #FFFFFF; text-decoration: none; font-weight: 700">+7 968 400 5380</a>
+        <a href="mailto:manager@ammaflowers.ru" style="color: #C9CDD2; text-decoration: none">manager@ammaflowers.ru</a>
+        <a href="https://t.me/Amma_Flowers" style="color: #C9CDD2; text-decoration: none">Telegram-канал</a>
+      </div>
+    </div>
+  
+  <div class="dk-credit">Сайт создан <a href="https://darindakepstar-pixel.github.io/daria-kromberg/" target="_blank" rel="noopener">Дарией Кромберг</a><span class="dk-sig" data-dk-dragon tabindex="0" role="img" aria-label="Подпись Дарии Кромберг"><svg viewBox="95 44 751 826" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M 368.308 69.010 C 362.559 71.326, 362.056 74.567, 363.424 100.500 C 364.157 114.387, 364.130 114.657, 360.048 134 C 353.745 163.869, 347.549 186.757, 341.406 202.865 C 331.944 227.674, 330.107 233.313, 326.985 247.135 C 325.325 254.486, 321.935 266.617, 319.453 274.093 C 316.970 281.569, 313.422 294.881, 311.569 303.674 C 307.873 321.205, 305.190 328.801, 298.293 341.259 C 291.401 353.706, 289.571 359.533, 284.539 385.061 C 276.473 425.977, 271.929 436.261, 261.284 437.689 C 250.778 439.098, 242.292 429.658, 231.435 404.485 C 228.432 397.521, 221.311 382.075, 215.611 370.161 C 189.719 316.041, 189.106 314.552, 186.545 299.460 C 182.511 275.688, 173.969 251.312, 166.788 243.084 C 141.531 214.142, 119.524 210.830, 119.718 236 C 119.902 259.854, 130.198 302.437, 142.203 329 C 158.693 365.484, 173.183 393.610, 186.510 415 C 190.450 421.325, 196.067 430.550, 198.991 435.500 C 201.916 440.450, 209.443 452.110, 215.719 461.412 C 242.367 500.905, 243.284 512.638, 223.035 554.964 C 204.813 593.052, 203.754 610.301, 218.785 624.156 C 230.030 634.522, 237.273 635.302, 274.688 630.176 C 315.311 624.612, 319.924 625.967, 338.441 648.896 C 347.907 660.617, 374.988 701.744, 382.957 716.500 C 393.012 735.120, 397.893 743.393, 408.030 759 C 418.561 775.214, 427.093 790.195, 436.506 809 C 452.411 840.778, 470.858 853.196, 484.355 841.212 C 489.323 836.800, 491.406 825.602, 488.922 816.658 C 484.708 801.483, 457.938 747.433, 446.974 731.965 C 442.505 725.659, 435.656 715.100, 431.755 708.500 C 420.015 688.638, 408.829 672.081, 399.835 661.255 C 388.309 647.381, 385.571 642.225, 385.531 634.318 C 385.463 620.690, 392.339 618.229, 425.997 619.839 C 438.923 620.457, 503.275 621.220, 569 621.535 C 634.725 621.850, 695.250 622.516, 703.500 623.016 C 747.157 625.662, 808.554 624.942, 814.662 621.712 C 826.046 615.692, 823.661 602.972, 810.051 597.117 C 797.307 591.635, 767.434 584.982, 744.439 582.504 C 736.222 581.619, 718.475 579.534, 705 577.870 C 689.092 575.907, 674.363 574.722, 663 574.491 C 639.706 574.019, 511.451 572.188, 507 572.264 C 505.075 572.297, 474.025 572.341, 438 572.362 C 401.975 572.383, 367.550 572.415, 361.500 572.435 C 345.135 572.487, 340.180 569.415, 324.310 549.374 C 310.588 532.045, 300.275 513.032, 296.397 497.911 C 293.251 485.645, 295.955 473.083, 306.105 452.812 C 310.162 444.709, 320.121 421.676, 331.749 393.500 C 333.111 390.200, 336.584 380.750, 339.467 372.500 C 342.350 364.250, 346.531 353.225, 348.759 348 C 352.424 339.403, 370.171 287.178, 384.269 243.500 C 387.288 234.150, 393.450 218.400, 397.964 208.500 C 411.125 179.637, 423 137.716, 423 120.119 C 423 97.078, 385.537 62.070, 368.308 69.010"/></svg></span></div>
+</footer>
+</div>
+<script>
+/* ══ Подпись Дарии Кромберг: при наведении/нажатии из подписи поднимается пиксельный дракон.
+      И привет тем, кто открыл консоль. ══ */
+(function () {
+  var DRAGON = [
+    '.....................h...h..........f.y.....',
+    '.....................hb..hb........fyf.y....',
+    'v.....................bbbbb.......ffy.f.....',
+    'vv...................bbbebbbb....fyf........',
+    '.vv.................bbbbbbbbbbbff...........',
+    '.vwv................bbbbbaabbbf.........v...',
+    '..vwv...............bbbb...aa..........vv...',
+    '..vwwv...............bbbb.............vwv...',
+    '...vwwv...............bbb............vwwv...',
+    '...vwwwv..............bbbb..........vwwv....',
+    '....vwwwv..............bbb.........vwwwv....',
+    '....vwwwwv.............bbbb.......vwwwv.....',
+    '.....vwwwwv.............bbb......vwwwwv.....',
+    '.....vwwwwwv...........cbbb.....vwwwwv......',
+    '......vwwwwwv.........ccbbb....vwwwwwv......',
+    '......vwwwwwwv.......ccbbbbb..vwwwwwv.......',
+    '.......vwwwwwwvv....ccbbbbbbbvwwwwwwv.......',
+    '.......vwwwwwwwwvv.ccbbbbbbbbbwwwwwv........',
+    '........vwwwwwwwwwbcbbbbbbbbbwwwwwv.........',
+    '........vwwvwwwvwwbcbbbbbbbbbwwvwwv.........',
+    '.........vv.vwv.vvbccbbbbbbbbvv.vv..........',
+    '..........v..v....bccbbbbbbbb...............',
+    '..................bccbbbbbbab...............',
+    '..................bbccbbbbbab...............',
+    '.................bb.ccbbbbab.bb.............',
+    '................bb..bccbbbb...bb............',
+    '...............hh...bbcbbbb....hh...........',
+    '.....................bbbbbb.................',
+    '......................bbbbb.................',
+    '.......................bbbb.................',
+    '........................bbb.................',
+    '........................bbb.................',
+    '.......................bbb..................',
+    '......................bbb...................',
+    '....................bbbb....................',
+    '..................bbbb......................',
+    '.................bbb........................',
+    '.................bb.........................',
+    '..................bb........................',
+    '...................bhh......................'
+  ];
+  var PAL = { b:'#7c6bff', a:'#463a82', c:'#b9f0e6', e:'#e7c27a', f:'#ffaa5a', y:'#ffe08a', h:'#dcd7f0', w:'#342c64', v:'#96c8e6' };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cv = null, ctx = null, S = 4, running = false, hold = false, PIX = [];
+  DRAGON.forEach(function (row, y) {
+    for (var x = 0; x < row.length; x++) if (row[x] !== '.') PIX.push({ x:x, y:y, ch:row[x], wing: row[x]==='w'||row[x]==='v',
+      ax: x + (Math.random()-.5)*16, ay: 41 + Math.random()*2, delay: (39-y)/39*1100 + Math.random()*350, fx: (Math.random()-.5)*6 });
+  });
+  function hex(c){ return [1,3,5].map(function(i){ return parseInt(c.slice(i,i+2),16); }); }
+  function mix(a,b,k){ a=hex(a); b=hex(b); return 'rgb('+[0,1,2].map(function(i){ return Math.round(a[i]+(b[i]-a[i])*k); }).join(',')+')'; }
+  function cl(k){ return k<0?0:k>1?1:k; }
+  function px(x,y,col,al,sz){ sz=sz||S; ctx.globalAlpha=al; ctx.fillStyle=col; ctx.fillRect(Math.round(x*S+(S-sz)/2), Math.round(y*S+(S-sz)/2), sz, sz); }
+  function fly(anchor, auto) {
+    if (running || reduce) return;
+    running = true;
+    if (!cv) { cv = document.createElement('canvas'); cv.className = 'dk-dragon'; cv.setAttribute('aria-hidden','true'); document.body.appendChild(cv); ctx = cv.getContext('2d'); }
+    var dpr = Math.min(2, window.devicePixelRatio||1), css = innerWidth < 700 ? 3 : 4;
+    S = css*dpr; cv.width = 44*S; cv.height = 44*S; cv.style.width = 44*css+'px'; cv.style.height = 44*css+'px';
+    var r = anchor && anchor.offsetParent ? anchor.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight-20, width: 0 };
+    cv.style.left = Math.max(8, Math.min(innerWidth - 44*css - 8, r.left + r.width/2 - 22*css)) + 'px';
+    cv.style.top = Math.max(8, r.top - 44*css + 4) + 'px';
+    cv.classList.add('is-on');
+    if (anchor) anchor.classList.add('is-on');
+    var t0 = performance.now(), RISE = 2000, LIVE = auto ? 3500 : 2200, FALL = 1800, liveEnd = null;
+    (function frame(now) {
+      var t = now - t0; ctx.clearRect(0,0,cv.width,cv.height);
+      if (t < RISE) PIX.forEach(function (p) {
+        var k = 1 - Math.pow(1 - cl((t-p.delay)/900), 3);
+        if (k <= 0) { if (Math.random() < .3) px(p.ax, p.ay, '#ffaa5a', .5, S*.5); return; }
+        px(p.ax+(p.x-p.ax)*k + Math.sin(k*6+p.fx)*(1-k)*1.2, p.ay+(p.y-p.ay)*k, k<1?mix('#ffaa5a',PAL[p.ch],k*k):PAL[p.ch], .35+k*.65, k<1?S*(.5+k*.5):S);
+      });
+      else if (liveEnd === null && (hold || t < RISE + LIVE)) {
+        var flap = 1 - .42*Math.pow(Math.sin((t - RISE)/210),2);
+        PIX.forEach(function (p) {
+          if ((p.ch==='f'||p.ch==='y') && Math.random() < .25) return;
+          px(p.x, Math.round(p.wing ? 17+(p.y-17)*flap : p.y), PAL[p.ch], 1);
+        });
+      } else {
+        if (liveEnd === null) liveEnd = t;
+        var ft = t - liveEnd;
+        if (ft < FALL) PIX.forEach(function (p) {
+          var k = cl((ft - p.y*18 - Math.random()*60)/1100);
+          px(p.x + p.fx*k, p.y + k*k*(42-p.y), mix(PAL[p.ch],'#3a3646',Math.min(1,k*1.6)), 1-k*.9);
+        });
+        else { ctx.clearRect(0,0,cv.width,cv.height); cv.classList.remove('is-on'); if (anchor) anchor.classList.remove('is-on'); running = false; return; }
+      }
+      ctx.globalAlpha = 1; requestAnimationFrame(frame);
+    })(t0);
+  }
+  document.querySelectorAll('[data-dk-dragon]').forEach(function (el) {
+    el.addEventListener('mouseenter', function () { hold = true; fly(el); });
+    el.addEventListener('mouseleave', function () { hold = false; });
+    el.addEventListener('click', function (e) { e.preventDefault(); hold = false; fly(el, true); });
+    el.addEventListener('keydown', function (e) { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); fly(el, true); } });
+  });
+
+  // ── для тех, кто заглянул в консоль ──
+  try {
+    var art = DRAGON.filter(function (_, i) { return i % 2 === 0; }).map(function (row) {
+      return row.replace(/[bac]/g,'█').replace(/[wv]/g,'▓').replace(/[efyh]/g,'▒').replace(/\./g,' ').replace(/\s+$/,'');
+    }).join('\n');
+    console.log('%c' + art, 'font:9px/1 monospace;color:#7c6bff');
+    console.log('%cПривет, исследователь 🐉', 'font:600 15px/1.5 Georgia,serif;color:#7c6bff');
+    console.log('%cЭто прототип сайта АММА: магазин, малый и крупный опт.\n' +
+      'Дизайн и код — Дария Кромберг. Предложения и вопросы: Telegram @wlknalone.\n' +
+      'А пока можно позвать дракона: наберите  dragon()', 'font:13px/1.6 system-ui,sans-serif;color:#6b716d');
+    console.log('%cАММА · design & code — Дария Кромберг', 'font:italic 12px Georgia,serif;color:#9a8fe0');
+    window.dragon = function () { fly(document.querySelector('.dk-sig'), true); return '🐉 Улетел. Возвращайтесь к цветам 🌷'; };
+  } catch (e) {}
+})();
+</script>
+
+</body>
+</html>
