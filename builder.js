@@ -1,6 +1,8 @@
 // АММА · 3D-конструктор букета · design & code: Дария Кромберг
 import * as THREE from 'three';
 import { OrbitControls } from './OrbitControls.js';
+import { RoomEnvironment } from './RoomEnvironment.js';
+import { makeHead, greenSprig, stemMaterial, paperMaterial } from './flowers.js';
 
 /* ───────────── Каталог ───────────── */
 const FLOWERS = [
@@ -54,7 +56,9 @@ try {
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
@@ -64,18 +68,25 @@ controls.target.set(0, 1.0, 0);
 controls.enableDamping = true;
 controls.enablePan = false;
 controls.minDistance = 3.2;
-controls.maxDistance = 9;
+controls.maxDistance = 11;
 controls.minPolarAngle = 0.35;
 controls.maxPolarAngle = 1.75;
 controls.autoRotate = !reduce;
 controls.autoRotateSpeed = 1.1;
 let idleTimer = null;
-controls.addEventListener('start', () => { controls.autoRotate = false; clearTimeout(idleTimer); });
-controls.addEventListener('end', () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => { controls.autoRotate = state.auto && !reduce; }, 3500); });
+let dragging = false;
+controls.addEventListener('start', () => { dragging = true; controls.autoRotate = false; clearTimeout(idleTimer); });
+controls.addEventListener('end', () => { dragging = false; fitDist = camera.position.distanceTo(controls.target); clearTimeout(idleTimer); idleTimer = setTimeout(() => { controls.autoRotate = state.auto && !reduce; }, 3500); });
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0xd8e4da, 0.95));
-const sun = new THREE.DirectionalLight(0xfff3e6, 2.1); sun.position.set(3, 5, 4); scene.add(sun);
-const rim = new THREE.DirectionalLight(0xe6f0ff, 0.7); rim.position.set(-4, 3, -3); scene.add(rim);
+// мягкий студийный свет: отражения от «комнаты», солнце с тенями, контровой свет
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8e4da, 0.35));
+const sun = new THREE.DirectionalLight(0xfff1e2, 2.3); sun.position.set(2.5, 5, 3.5);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.015; sun.shadow.radius = 4;
+Object.assign(sun.shadow.camera, { left: -1.3, right: 1.3, top: 1.3, bottom: -1.3, near: 1, far: 12 });
+sun.target.position.set(0, 1, 0); scene.add(sun, sun.target);
+const rim = new THREE.DirectionalLight(0xe6f0ff, 0.9); rim.position.set(-4, 3, -3); scene.add(rim);
 
 // мягкая тень под парящим букетом
 const shTex = (() => {
@@ -92,7 +103,7 @@ const stemsGroup = new THREE.Group(); bouquet.add(stemsGroup);
 const wrapGroup = new THREE.Group(); bouquet.add(wrapGroup);
 const BIND = new THREE.Vector3(0, 0.55, 0);
 
-/* ───────────── Материалы и геометрии ───────────── */
+/* ───────────── Материалы ───────────── */
 const matCache = new Map();
 function mat(color, opts) {
   const key = color + JSON.stringify(opts || {});
@@ -100,163 +111,7 @@ function mat(color, opts) {
   return matCache.get(key);
 }
 const shade = (hex, k) => '#' + new THREE.Color(hex).multiplyScalar(k).getHexString();
-const G = {
-  stem: new THREE.CylinderGeometry(0.009, 0.011, 1, 6, 1).translate(0, 0.5, 0),
-  bud: new THREE.SphereGeometry(0.06, 14, 10),
-  calyx: new THREE.ConeGeometry(0.05, 0.07, 8, 1, true),
-  disc: new THREE.CircleGeometry(0.034, 10),
-  dot: new THREE.SphereGeometry(0.012, 6, 4),
-  floret: new THREE.CircleGeometry(0.036, 4),
-  leaf: new THREE.SphereGeometry(1, 10, 6),
-  trumpet: new THREE.ConeGeometry(0.045, 0.11, 7, 1, true)
-};
-const petalGeo = (r, phiLen, thetaStart) => new THREE.SphereGeometry(r, 16, 10, 0, phiLen, thetaStart, Math.PI - thetaStart).translate(0, r * 0.75, 0);
-const PG = {
-  r1: petalGeo(0.062, 1.9, 0.32), r2: petalGeo(0.08, 1.75, 0.55), r3: petalGeo(0.098, 1.55, 0.85),
-  p1: petalGeo(0.072, 1.8, 0.35), p2: petalGeo(0.095, 1.65, 0.6), p3: petalGeo(0.118, 1.5, 0.9),
-  tulip: petalGeo(0.09, 1.3, 0.3), eus: petalGeo(0.105, 1.6, 0.8)
-};
-const carnGeo = (() => {
-  const g = new THREE.SphereGeometry(0.1, 28, 18, 0, Math.PI * 2, 0, 1.75);
-  const p = g.attributes.position, v = new THREE.Vector3();
-  for (let i = 0; i < p.count; i++) {
-    v.fromBufferAttribute(p, i);
-    const a = Math.atan2(v.z, v.x), n = 1 + 0.12 * Math.sin(a * 14 + v.y * 60) + 0.06 * Math.sin(a * 31);
-    v.x *= n; v.z *= n; v.y *= 0.8; p.setXYZ(i, v.x, v.y, v.z);
-  }
-  g.computeVertexNormals(); return g;
-})();
-
-/* ───────────── Модели цветов (голова смотрит вверх по +Y) ───────────── */
-function ring(group, geo, count, color, tilt, offset) {
-  for (let i = 0; i < count; i++) {
-    const m = new THREE.Mesh(geo, mat(color));
-    m.rotation.set(0, (i / count) * Math.PI * 2 + (offset || 0), 0);
-    if (tilt) { const g = new THREE.Group(); g.add(m); g.rotation.z = tilt; const o = new THREE.Group(); o.add(g); o.rotation.y = (i / count) * Math.PI * 2; m.rotation.y = 0; group.add(o); }
-    else group.add(m);
-  }
-}
-function petalGeometry(w, h, cup, curl) {
-  const sh = new THREE.Shape();
-  sh.moveTo(0, 0);
-  sh.bezierCurveTo(w * 0.72, h * 0.04, w * 0.8, h * 0.72, w * 0.38, h * 0.98);
-  sh.quadraticCurveTo(0, h * 1.1, -w * 0.38, h * 0.98);
-  sh.bezierCurveTo(-w * 0.8, h * 0.72, -w * 0.72, h * 0.04, 0, 0);
-  const g = new THREE.ShapeGeometry(sh, 10), p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i);
-    p.setZ(i, -cup * (x * x) / (w * w) * h * 0.55 + curl * Math.pow(y / h, 3) * h * 0.45);
-  }
-  g.computeVertexNormals();
-  return g;
-}
-const PETAL = {
-  rS: petalGeometry(0.06, 0.085, 0.9, 0.0), rM: petalGeometry(0.066, 0.09, 0.7, 0.25), rL: petalGeometry(0.07, 0.092, 0.5, 0.55),
-  tulip: petalGeometry(0.058, 0.13, 0.85, -0.1), eus: petalGeometry(0.075, 0.1, 0.55, 0.35)
-};
-function spiralHead(color, n, tiltA, tiltB, scaleA, scaleB) {
-  const g = new THREE.Group();
-  const core = new THREE.Mesh(G.bud, mat(shade(color, 0.8))); core.scale.set(0.6, 0.75, 0.6); core.position.y = 0.03; g.add(core);
-  for (let i = 0; i < n; i++) {
-    const t = n === 1 ? 1 : i / (n - 1), geo = t < 0.35 ? PETAL.rS : t < 0.7 ? PETAL.rM : PETAL.rL;
-    const m = new THREE.Mesh(geo, mat(shade(color, 0.84 + t * 0.18)));
-    m.position.z = 0.003 + t * 0.014; m.rotation.x = tiltA + t * (tiltB - tiltA); m.scale.setScalar(scaleA + t * (scaleB - scaleA));
-    const pv = new THREE.Group(); pv.rotation.y = i * 2.39996; pv.add(m); g.add(pv);
-  }
-  const cx = new THREE.Mesh(G.calyx, mat('#4F7F55')); cx.rotation.x = Math.PI; cx.position.y = -0.01; cx.scale.setScalar(0.8); g.add(cx);
-  return g;
-}
-function roseHead(color, big) { return big ? spiralHead(color, 30, 0.04, 1.05, 0.55, 1.2) : spiralHead(color, 20, 0.03, 0.78, 0.6, 1.12); }
-function sprayHead(color) {
-  const g = new THREE.Group();
-  [[0, 0.06, 0], [0.11, -0.02, 0.03], [-0.09, -0.03, 0.06], [0.02, -0.05, -0.11]].forEach(([x, y, z], i) => {
-    const h = roseHead(color, false); h.scale.setScalar(i === 0 ? 0.62 : 0.5); h.position.set(x, y, z); h.rotation.set(z * 3, 0, -x * 3); g.add(h);
-    const st = new THREE.Mesh(G.stem, mat('#5E8F5C')); st.scale.set(0.6, Math.hypot(x, y + 0.1, z) + 0.02, 0.6); st.position.set(0, -0.1, 0);
-    st.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, y + 0.1, z).normalize()); g.add(st);
-  });
-  return g;
-}
-function eustomaHead(color) {
-  const g = new THREE.Group();
-  for (let i = 0; i < 9; i++) {
-    const t = i / 8, m = new THREE.Mesh(PETAL.eus, mat(shade(color, 0.9 + t * 0.1)));
-    m.position.z = 0.008; m.rotation.x = 0.35 + t * 0.45; m.scale.setScalar(0.85 + t * 0.25);
-    const pv = new THREE.Group(); pv.rotation.y = i * 2.39996; pv.add(m); g.add(pv);
-  }
-  const c = new THREE.Mesh(G.bud, mat('#D9D49A')); c.scale.setScalar(0.28); c.position.y = 0.03; g.add(c);
-  return g;
-}
-function tulipHead(color) {
-  const g = new THREE.Group();
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(PETAL.tulip, mat(i % 2 ? color : shade(color, 0.9)));
-    m.position.z = i % 2 ? 0.022 : 0.014; m.rotation.x = 0.14 + (i % 2) * 0.06;
-    const pv = new THREE.Group(); pv.rotation.y = i * (Math.PI / 3) + (i % 2) * 0.2; pv.add(m); g.add(pv);
-  }
-  return g;
-}
-function carnationHead(color) {
-  const g = new THREE.Group(); const m = new THREE.Mesh(carnGeo, mat(color)); g.add(m);
-  const cx = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.022, 0.09, 8), mat('#6E9A6B')); cx.position.y = -0.05; g.add(cx); return g;
-}
-function daisy(color) {
-  const g = new THREE.Group();
-  const c = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 6), mat(color === '#F2D27A' ? '#C98E2E' : '#E3C35A')); c.scale.y = 0.6; g.add(c);
-  for (let i = 0; i < 16; i++) { const p = new THREE.Mesh(G.leaf, mat(color)); p.scale.set(0.012, 0.004, 0.05); const a = i / 16 * Math.PI * 2; p.position.set(Math.cos(a) * 0.05, 0, Math.sin(a) * 0.05); p.rotation.y = -a + Math.PI / 2; p.rotation.x = 0.25; g.add(p); }
-  return g;
-}
-function chrysHead(color) {
-  const g = new THREE.Group();
-  [[0, 0.05, 0], [0.1, 0, 0.04], [-0.08, -0.01, 0.07], [0.03, -0.02, -0.1], [-0.09, 0.02, -0.05]].forEach(([x, y, z]) => { const d = daisy(color); d.position.set(x, y, z); d.rotation.set(z * 2.5, 0, -x * 2.5); g.add(d); });
-  return g;
-}
-function alstroHead(color) {
-  const g = new THREE.Group();
-  for (let i = 0; i < 4; i++) {
-    const a = i / 4 * Math.PI * 2, t = new THREE.Mesh(G.trumpet, mat(i % 2 ? color : shade(color, 0.93)));
-    t.position.set(Math.cos(a) * 0.05, 0.03, Math.sin(a) * 0.05); t.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9); t.rotateX(Math.PI); g.add(t);
-    const sp = new THREE.Mesh(G.dot, mat('#7A3A2A')); sp.position.copy(t.position).multiplyScalar(1.3); sp.position.y = 0.06; g.add(sp);
-  }
-  return g;
-}
-function hydrangeaHead(color) {
-  const g = new THREE.Group(), N = 240, inst = new THREE.InstancedMesh(G.floret, mat(color), N);
-  const dummy = new THREE.Object3D(), c = new THREE.Color(color), tmp = new THREE.Color();
-  for (let i = 0; i < N; i++) {
-    const t = (i + 0.5) / N, th = Math.acos(1 - 1.7 * t), ph = i * 2.39996, r = 0.2;
-    dummy.position.set(r * Math.sin(th) * Math.cos(ph), r * Math.cos(th) * 0.85, r * Math.sin(th) * Math.sin(ph));
-    dummy.lookAt(dummy.position.clone().multiplyScalar(2)); dummy.rotateZ(ph); dummy.updateMatrix(); inst.setMatrixAt(i, dummy.matrix);
-    inst.setColorAt(i, tmp.copy(c).multiplyScalar(0.9 + ((i * 7919) % 100) / 500));
-  }
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 10), mat(shade(color, 0.8))); core.scale.y = 0.8; g.add(core, inst); return g;
-}
-function greenSprig(kind, color) {
-  const g = new THREE.Group(), len = 0.55;
-  const st = new THREE.Mesh(G.stem, mat(shade(color === '#FFFFFF' ? '#7FA27A' : color, 0.85))); st.scale.set(0.7, len, 0.7); g.add(st);
-  const n = kind === 'gyps' ? 0 : 9;
-  for (let i = 0; i < n; i++) {
-    const y = 0.12 + (i / n) * (len - 0.12), side = i % 2 ? 1 : -1, l = new THREE.Mesh(kind === 'euca' ? G.disc : G.leaf, mat(color));
-    if (kind === 'euca') { l.position.set(side * 0.03, y, 0); l.rotation.set(0.3, side * 0.6, 0); l.scale.setScalar(1 - i * 0.04); }
-    else if (kind === 'pist') { l.scale.set(0.022, 0.06, 0.006); l.position.set(side * 0.04, y, 0); l.rotation.z = -side * 0.9; }
-    else { l.scale.set(0.012, 0.045, 0.004); l.position.set(side * 0.025, y, 0); l.rotation.z = -side * 0.7; }
-    g.add(l);
-  }
-  if (kind === 'gyps') {
-    const N = 70, inst = new THREE.InstancedMesh(G.dot, mat('#FFFFFF', { roughness: 0.9 }), N), d = new THREE.Object3D();
-    for (let i = 0; i < N; i++) { const a = i * 2.39996, r = 0.05 + ((i * 37) % 10) / 70; d.position.set(Math.cos(a) * r, len - 0.05 + ((i * 13) % 10) / 90, Math.sin(a) * r); d.scale.setScalar(0.8 + (i % 5) / 6); d.updateMatrix(); inst.setMatrixAt(i, d.matrix); }
-    g.add(inst);
-  }
-  return g;
-}
-const headCache = new Map();
-function makeHead(id, color) {
-  const key = id + color;
-  if (!headCache.has(key)) {
-    const f = { rose: () => roseHead(color, false), peony: () => roseHead(color, true), spray: () => sprayHead(color), eustoma: () => eustomaHead(color), tulip: () => tulipHead(color), carnation: () => carnationHead(color), chrys: () => chrysHead(color), alstro: () => alstroHead(color), hydrangea: () => hydrangeaHead(color) }[id];
-    headCache.set(key, f());
-  }
-  return headCache.get(key).clone();
-}
+const G = { stem: new THREE.CylinderGeometry(0.0085, 0.011, 1, 8, 1).translate(0, 0.5, 0) };
 
 /* ───────────── Раскладка стеблей ───────────── */
 const live = new Map(); // key -> {obj, stem, target, born}
@@ -267,16 +122,18 @@ function stemList() {
   GREENS.forEach(g => { const n = state.greens[g.id] || 0; for (let k = 0; k < n; k++) list.push({ key: `${g.id}#${k}`, id: g.id, color: g.color, size: 1, green: true }); });
   return list;
 }
-let domeR = 0.3;
+let domeR = 0.3, fitDist = 5.2;
 function layout() {
   const list = stemList(), flowers = list.filter(s => !s.green), greens = list.filter(s => s.green);
   const area = flowers.reduce((a, s) => a + s.size * s.size, 0);
-  domeR = 0.14 + 0.11 * Math.sqrt(area);
+  domeR = 0.12 + 0.1 * Math.sqrt(area);
+  fitDist = 4.6 + Math.max(0, domeR - 0.4) * 5;
   flowers.sort((a, b) => (hash(a.key) - a.size * 0.35) - (hash(b.key) - b.size * 0.35));
-  const N = flowers.length, center = new THREE.Vector3(0, 1.0 + domeR * 0.55, 0);
+  const N = flowers.length, center = new THREE.Vector3(0, 1.0 + domeR * 0.6, 0);
+  const thMax = N > 30 ? 1.45 : N > 15 ? 1.25 : 1.1, yk = N > 30 ? 0.8 : 0.6;
   flowers.forEach((s, i) => {
-    const t = N === 1 ? 0 : (i + 0.5) / N, th = Math.acos(1 - t * (1 - Math.cos(1.25))), ph = i * 2.39996 + hash(s.key);
-    s.pos = new THREE.Vector3(Math.sin(th) * Math.cos(ph) * domeR, Math.cos(th) * domeR * 0.55, Math.sin(th) * Math.sin(ph) * domeR).add(center);
+    const t = N === 1 ? 0 : (i + 0.5) / N, th = Math.acos(1 - t * (1 - Math.cos(thMax))), ph = i * 2.39996 + hash(s.key);
+    s.pos = new THREE.Vector3(Math.sin(th) * Math.cos(ph) * domeR, (Math.cos(th) - (N > 30 ? 0.3 : 0)) * domeR * yk, Math.sin(th) * Math.sin(ph) * domeR).add(center);
   });
   greens.forEach((s, i) => {
     const ph = (i / Math.max(1, greens.length)) * Math.PI * 2 + hash(s.key) * 0.6, r = domeR * 1.05 + 0.05;
@@ -288,8 +145,8 @@ function layout() {
     let o = live.get(s.key);
     if (!o || o.dying) {
       if (o) { stemsGroup.remove(o.obj, o.stem); }
-      const obj = s.green ? greenSprig(s.id, s.color) : makeHead(s.id, s.color);
-      const stem = new THREE.Mesh(G.stem, mat(s.green ? shade(s.color === '#FFFFFF' ? '#7FA27A' : s.color, 0.85) : '#5E8F5C'));
+      const obj = s.green ? greenSprig(s.id) : makeHead(s.id, s.color, hash(s.key + 'leaf') < (list.length > 35 ? 0.15 : 0.65), list.length > 35);
+      const stem = new THREE.Mesh(G.stem, stemMaterial); stem.castShadow = true;
       obj.scale.setScalar(0.001); stemsGroup.add(obj, stem);
       o = { obj, stem, cur: s.pos.clone().lerp(BIND, 0.4), born: performance.now(), green: s.green, size: s.size };
       live.set(s.key, o);
@@ -312,7 +169,7 @@ function animateStems(now) {
     o.obj.position.copy(o.cur);
     o.obj.quaternion.setFromUnitVectors(UP, o.green ? tmpV.copy(dir).add(new THREE.Vector3(0, 0.6, 0)).normalize() : dir);
     if (o.green) o.obj.position.copy(BIND).addScaledVector(tmpV, 0.12);
-    o.obj.scale.setScalar(Math.max(0.001, sc) * (o.green ? 1.3 : o.size > 1.3 ? 1.05 : 2.1));
+    o.obj.scale.setScalar(Math.max(0.001, sc) * (o.green ? 1.3 : o.size > 1.3 ? 1.1 : 2.45));
     const bottom = tmpV.copy(BIND).addScaledVector(dir, -0.62);
     const len = o.cur.distanceTo(bottom) - (o.green ? 0.3 : 0.04);
     o.stem.position.copy(bottom);
@@ -322,27 +179,45 @@ function animateStems(now) {
 }
 
 /* ───────────── Упаковка и лента ───────────── */
+// мятая бумага: лепесток упаковки с волнами-складками
+function crinkle(geo, amp, seed) {
+  const p = geo.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const a = Math.atan2(v.z, v.x), r = Math.hypot(v.x, v.z), k = Math.min(1, Math.max(0, (v.y - BIND.y) / 0.5));
+    const n = 1 + amp * k * (Math.sin(a * 11 + seed) * 0.6 + Math.sin(a * 23 + v.y * 9 + seed * 2) * 0.3 + Math.sin(a * 5 - seed) * 0.5);
+    p.setXYZ(i, Math.cos(a) * r * n, v.y + amp * 0.4 * k * Math.sin(a * 7 + seed), Math.sin(a) * r * n);
+  }
+  geo.computeVertexNormals(); return geo;
+}
 function updateWrap() {
   wrapGroup.clear();
   const w = WRAPS.find(x => x.id === state.wrap), R = domeR, ribbonColor = RIBBONS[state.ribbon][1];
   if (w && w.color) {
-    const film = w.id === 'film';
-    const m = film ? new THREE.MeshPhysicalMaterial({ color: '#E8F2F6', roughness: 0.15, transparent: true, opacity: 0.35, side: THREE.DoubleSide, clearcoat: 1 }) : mat(w.color, { roughness: 0.9 });
+    const film = w.id === 'film', m = paperMaterial(w.color, film), m2 = film ? m : paperMaterial(shade(w.color, 1.04), false);
     const cy = 1.0 + R * 0.55;
-    const back = [[0.05, 0.0], [0.09, 0.25], [0.12, BIND.y], [R * 0.8 + 0.08, cy - R * 0.45], [R * 1.08 + 0.12, cy + R * 0.05], [R * 1.18 + 0.16, cy + R * 0.28]].map(p => new THREE.Vector2(p[0], p[1]));
+    const back = [[0.05, 0.0], [0.09, 0.25], [0.12, BIND.y], [R * 0.8 + 0.08, cy - R * 0.5], [R * 1.05 + 0.12, cy - R * 0.1], [R * 1.15 + 0.15, cy + R * 0.12]].map(p => new THREE.Vector2(p[0], p[1]));
     const front = [[0.05, 0.0], [0.09, 0.25], [0.12, BIND.y], [R * 0.78 + 0.08, cy - R * 0.55], [R * 0.98 + 0.12, cy - R * 0.22]].map(p => new THREE.Vector2(p[0], p[1]));
-    const b = new THREE.Mesh(new THREE.LatheGeometry(back, 40, Math.PI * 0.42, Math.PI * 1.16), m);
-    const f = new THREE.Mesh(new THREE.LatheGeometry(front, 40, -Math.PI * 0.62, Math.PI * 1.24), film ? m : mat(shade(w.color, 1.03), { roughness: 0.9 }));
-    wrapGroup.add(b, f);
+    const b = new THREE.Mesh(crinkle(new THREE.LatheGeometry(back, 72, Math.PI * 0.42, Math.PI * 1.16), 0.07, 1.3), m);
+    const f = new THREE.Mesh(crinkle(new THREE.LatheGeometry(front, 72, -Math.PI * 0.62, Math.PI * 1.24), 0.06, 4.1), m2);
+    // второй слой бумаги, чуть повёрнутый — как у настоящего букета
+    const b2 = new THREE.Mesh(crinkle(new THREE.LatheGeometry(back.map(p => new THREE.Vector2(p.x * 0.97, p.y * 0.985)), 72, Math.PI * 1.25, Math.PI * 0.9), 0.08, 7.7), m2);
+    [b, f, b2].forEach(x => { x.castShadow = !film; x.receiveShadow = true; });
+    wrapGroup.add(b, b2, f);
   }
-  const knot = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.022, 10, 40), mat(ribbonColor, { roughness: 0.4 }));
-  knot.rotation.x = Math.PI / 2; knot.position.y = BIND.y; wrapGroup.add(knot);
+  const rmat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(ribbonColor), roughness: 0.32, sheen: 0.8, sheenColor: new THREE.Color(ribbonColor).lerp(new THREE.Color('#FFFFFF'), 0.5), side: THREE.DoubleSide, envMapIntensity: 0.7 });
+  const knot = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 12, 48), rmat);
+  knot.scale.set(1, 1, 1.6); knot.rotation.x = Math.PI / 2; knot.position.y = BIND.y; wrapGroup.add(knot);
   [-1, 1].forEach(sd => {
-    const loop = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.018, 8, 30), mat(ribbonColor, { roughness: 0.4 }));
-    loop.scale.set(1.3, 0.8, 1); loop.position.set(sd * 0.1, BIND.y + 0.02, 0.17); loop.rotation.z = sd * 0.35; wrapGroup.add(loop);
-    const tail = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.32), mat(ribbonColor, { roughness: 0.4 }));
-    tail.position.set(sd * 0.06, BIND.y - 0.17, 0.17); tail.rotation.z = sd * 0.25; wrapGroup.add(tail);
+    const loop = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.016, 10, 36), rmat);
+    loop.scale.set(1.3, 0.8, 2.2); loop.position.set(sd * 0.1, BIND.y + 0.02, 0.17); loop.rotation.z = sd * 0.35; wrapGroup.add(loop);
+    const tg = new THREE.PlaneGeometry(0.05, 0.34, 1, 12), tp = tg.attributes.position;
+    for (let i = 0; i < tp.count; i++) { const y = tp.getY(i); tp.setZ(i, Math.sin(y * 14 + sd) * 0.012); }
+    tg.computeVertexNormals();
+    const tail = new THREE.Mesh(tg, rmat);
+    tail.position.set(sd * 0.06, BIND.y - 0.18, 0.18); tail.rotation.z = sd * 0.25; wrapGroup.add(tail);
   });
+  wrapGroup.traverse(o => { if (o.isMesh && o.material === rmat) o.castShadow = true; });
 }
 
 /* ───────────── Цикл отрисовки ───────────── */
@@ -357,6 +232,8 @@ function frame(now) {
   bouquet.position.y = reduce ? 0 : Math.sin(t * 0.9) * 0.05;
   const s = 1 - (reduce ? 0 : Math.sin(t * 0.9)) * 0.08; shadow.scale.setScalar(s * (0.8 + domeR));
   shadow.material.opacity = 0.9 - (reduce ? 0 : Math.sin(t * 0.9)) * 0.2;
+  // камера плавно отъезжает, если букет вырос (пока человек сам не крутит)
+  if (!dragging) { const d = camera.position.distanceTo(controls.target); if (Math.abs(d - fitDist) > 0.02) camera.position.sub(controls.target).setLength(d + (fitDist - d) * 0.08).add(controls.target); }
   animateStems(now); controls.update(); renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -474,4 +351,4 @@ document.getElementById('bq-cart').onclick = () => toast('Букет добав�
 document.getElementById('bq-send').onclick = () => toast('Схема отправлена флористу — он проверит состав и напишет вам в течение [времени].');
 
 applyPreset(PRESETS['Нежный']);
-window.__bq = { state, live };
+window.__bq = { state, live, renderer };
