@@ -522,3 +522,4 @@ export function greenSprig(kind) {
   return sprigCache.get(kind).clone();
 }
 export { rng };
+export { petal, Acc, leafMat, plainMat, petalMat, col, M, ringM, alongM, PRIM, stemPiece, GOLD, smooth, lerp, canvasTex, vary };
