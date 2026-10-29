@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './OrbitControls.js';
 import { RoomEnvironment } from './RoomEnvironment.js';
 import { makeHead, greenSprig, stemMaterial, paperMaterial } from './flowers.js';
-import { loadBrand, wrapPaperTex, bandTex, hatbox, giftBox, boxBag, bag, sleeve, pickTag, card, pot, ribbonMat, sticker, messageCard, frontBow } from './packaging.js';
+import { loadBrand, wrapPaperTex, bandTex, hatbox, giftBox, boxBag, bag, sleeve, pickTag, card, pot, ribbonMat, sticker, messageCard, frontBow, plantBox, pickPlantBox, PLANT_BOXES } from './packaging.js';
 import { PLANTS, makePlant, potR } from './plants.js';
 
 /* ───────────── Каталог ───────────── */
@@ -85,7 +85,7 @@ const TABS = {
 const MAX_STEMS = 101;
 
 const state = { mode: 'bouquet', flowers: {}, greens: {}, wrap: 'amma-white', band: true, box: 'hat-graphite', ribbon: 0, card: '', tab: 'flowers', auto: true, picked: {},
-  plant: 'agla-red', size: 12, pot: 'white', pack: new Set(['sleeve', 'tag']), group: 'Все' };
+  plant: 'agla-red', size: 12, pot: 'white', pack: new Set(['sleeve', 'tag']), group: 'Все', giftClosed: false };
 FLOWERS.forEach(f => { state.picked[f.id] = 0; });
 
 /* ───────────── Сцена ───────────── */
@@ -372,36 +372,44 @@ function updateCard() {
 }
 
 /* ───────────── Горшечное растение ───────────── */
+let plantBoxSize = null;
 function buildPlant() {
   plantGroup.clear();
-  const p = PLANTS.find(x => x.id === state.plant), cm = state.size, r = potR(cm), on = k => state.pack.has(k);
+  const p = PLANTS.find(x => x.id === state.plant), cm = state.size, r = potR(cm), on = k => state.pack.has(k), gift = on('gift');
+  const nm = p.name.replace(/«|»/g, ''), rc = RIBBONS[state.ribbon][1];
   const root = new THREE.Group(); plantGroup.add(root);
-  const potObj = pot(state.pot, r, on('label') ? p.name.replace(/«|»/g, '') : null);
+  const potObj = pot(state.pot, r, on('label') ? nm : null);
   const plant = makePlant(p.id, cm); plant.position.y = potObj.userData.soilY;
   const unit = new THREE.Group(); unit.add(potObj, plant);
-  // размеры растения, чтобы подобрать рукав и камеру
   const bb = new THREE.Box3().setFromObject(plant), ph = Math.max(0.2, bb.max.y), pw = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z);
   if (on('sleeve')) { const sl = sleeve(r * 0.98, Math.max(r * 1.9, pw * 0.42), Math.min(ph * 0.82, Math.max(0.5, ph * 0.7))); unit.add(sl); }
-  if (on('tag')) { const t = pickTag(p.name.replace(/«|»/g, ''), p.care); t.scale.setScalar(Math.min(1, 0.6 + r)); t.position.set(r * 0.45, potObj.userData.soilY - 0.08, r * 0.35); t.rotation.set(-0.12, -0.5, 0.06); unit.add(t); }
-  if (on('ribbon')) {
-    const rc = RIBBONS[state.ribbon][1], band = new THREE.Mesh(new THREE.TorusGeometry(r * 1.0, 0.012, 8, 64), ribbonMat(rc));
-    band.rotation.x = Math.PI / 2; band.position.y = potObj.userData.h * 0.82; unit.add(band);
-    const bow = new THREE.Group(); ribbonBow(bow, 0, rc); bow.scale.setScalar(0.45 + r); bow.position.set(0, potObj.userData.h * 0.82, r * 0.78); unit.add(bow);
+  if (on('tag')) { const t = pickTag(nm, p.care); t.scale.setScalar(Math.min(1, 0.6 + r)); t.position.set(r * 0.45, potObj.userData.soilY - 0.08, r * 0.35); t.rotation.set(-0.12, -0.5, 0.06); unit.add(t); }
+  // лента: в подарочной коробке — на крышке, иначе — на кашпо с плоским бантом спереди
+  if (on('ribbon') && !gift) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(r * 0.995, 0.009, 8, 64), ribbonMat(rc));
+    band.rotation.x = Math.PI / 2; band.position.y = potObj.userData.h * 0.8; unit.add(band);
+    const bow = frontBow(rc, 0.4 + r * 0.9); bow.position.set(0, potObj.userData.h * 0.8, r * 1.0); unit.add(bow);
   }
-  let base = 0;
-  if (on('gift')) {
-    const gb = giftBox('forest', r * 2.9, r * 2.9, potObj.userData.h * 0.62, { open: true, tissuePaper: true, ribbon: true });
-    root.add(gb); base = potObj.userData.h * 0.62 - 0.05;
+  plantBoxSize = null;
+  let boxW = 0;
+  if (gift) {
+    const total = potObj.userData.h + ph, B = pickPlantBox(r * 2, total, pw);
+    plantBoxSize = B;
+    const box = plantBox(B.id, { closed: state.giftClosed, ribbon: on('ribbon') ? rc : '#C9A96E' });
+    boxW = box.userData.w; root.add(box);
+    unit.position.y = 0.05;
+    const fitY = Math.min(1, (box.userData.h - 0.06) / (total * 1.02)), fitXZ = Math.min(fitY, (boxW * 0.9) / Math.max(pw * fitY, r * 2.05)); unit.scale.set(fitXZ, fitY, fitXZ);
   }
-  unit.position.y = base; root.add(unit);
-  if (on('care')) { const c = card('care', p.name.replace(/«|»/g, '')); c.scale.setScalar(0.8); c.position.set(r * (on('gift') ? 1.9 : 1.4) + 0.2, 0, r * 0.6); c.rotation.set(-0.14, -0.35, 0); root.add(c); }
-  if (on('bag')) { const b = bag('wide'); b.scale.setScalar(0.75 + r * 0.8); b.position.set(-(r * (on('gift') ? 1.9 : 1.3) + 0.45), 0, -0.15); b.rotation.y = 0.35; root.add(b); }
+  root.add(unit);
+  const side = gift ? boxW / 2 : r * 1.3;
+  if (on('care')) { const c = card('care', nm); c.scale.setScalar(0.8); if (gift) { c.position.set(-(side + 0.22), 0, side * 0.55); c.rotation.set(-0.14, 0.4, 0); } else { c.position.set(side + 0.25, 0, r * 0.6); c.rotation.set(-0.14, -0.35, 0); } root.add(c); }
+  if (on('bag')) { const b = bag('wide'); b.scale.setScalar(0.75 + r * 0.8); b.position.set(-(side + (on('care') && gift ? 0.85 : 0.5)), 0, -0.2); b.rotation.y = 0.35; root.add(b); }
   root.position.y = 0.05;
-  root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  root.traverse(o => { if (o.isMesh && !o.userData.noShadow) { o.castShadow = true; o.receiveShadow = !gift; } });
   const all = new THREE.Box3().setFromObject(root), size = all.getSize(new THREE.Vector3()), c = all.getCenter(new THREE.Vector3());
   camTarget.set(c.x * 0.3, c.y, 0);
   fitDist = Math.max(2.2, Math.max(size.y, size.x * 0.75) * 2.3 + 0.8);
-  canvas.setAttribute('aria-label', `${p.name} в горшке ${cm} см, ${POTS.find(x => x.id === state.pot).name.toLowerCase()}`);
+  canvas.setAttribute('aria-label', `${p.name} в горшке ${cm} см, ${POTS.find(x => x.id === state.pot).name.toLowerCase()}` + (plantBoxSize ? `, в подарочной коробке ${plantBoxSize.id}` : ''));
 }
 
 /* ───────────── Режимы ───────────── */
@@ -542,8 +550,17 @@ function renderPanel() {
     panel.appendChild(el('p', { class: 'bq-note', style: 'margin:0 4px 6px' }, 'Отметьте, что положить вместе с растением:'));
     PACK.forEach(a => {
       const lab = el('label', { class: 'bq-toggle' }, `<input type="checkbox" ${state.pack.has(a.id) ? 'checked' : ''}> <span><b>${a.name}</b><small class="bq-note">${a.note} · [цена] ₽</small></span>`);
-      lab.querySelector('input').onchange = e => { e.target.checked ? state.pack.add(a.id) : state.pack.delete(a.id); buildPlant(); renderSummary(); };
+      lab.querySelector('input').onchange = e => { e.target.checked ? state.pack.add(a.id) : state.pack.delete(a.id); buildPlant(); renderPanel(); renderSummary(); };
       panel.appendChild(lab);
+      if (a.id === 'gift' && state.pack.has('gift')) {
+        const sub = el('div', { class: 'bq-sub' });
+        const B = plantBoxSize || PLANT_BOXES[1];
+        sub.appendChild(el('div', { class: 'bq-note' }, `Размер подобран под растение: <b>${B.id} · ${B.cm.join('×')} см</b>. С окном — растение видно, даже когда коробка закрыта.`));
+        const sizes = el('div', { class: 'bq-sizes', 'aria-label': 'Размеры коробок' }, PLANT_BOXES.map(b => `<span class="bq-size${b.id === B.id ? ' is-on' : ''}" title="${b.note}">${b.id} · ${b.cm.join('×')}</span>`).join(''));
+        const cl = el('label', { class: 'bq-toggle bq-toggle--sub' }, `<input type="checkbox" ${state.giftClosed ? 'checked' : ''}> <span><b>Закрыть крышку</b><small class="bq-note">Так коробку получит адресат</small></span>`);
+        cl.querySelector('input').onchange = e => { state.giftClosed = e.target.checked; buildPlant(); };
+        sub.append(sizes, cl); panel.appendChild(sub);
+      }
     });
   } else ribbonPanel(state.mode !== 'potted');
 }
@@ -556,7 +573,7 @@ function change(group, key, d) {
 function renderSummary() {
   if (state.mode === 'potted') {
     const p = PLANTS.find(x => x.id === state.plant), potN = POTS.find(x => x.id === state.pot).name;
-    const packs = PACK.filter(a => state.pack.has(a.id)).map(a => a.name + (a.id === 'ribbon' ? ': ' + RIBBONS[state.ribbon][0].toLowerCase() : ''));
+    const packs = PACK.filter(a => state.pack.has(a.id)).map(a => a.name + (a.id === 'ribbon' ? ': ' + RIBBONS[state.ribbon][0].toLowerCase() : a.id === 'gift' && plantBoxSize ? ' ' + plantBoxSize.id + ' · ' + plantBoxSize.cm.join('×') + ' см' : ''));
     summaryEl.innerHTML = `<div class="bq-total"><span>${p.name} · горшок ${state.size} см</span><b>[сумма] ₽</b></div><div class="bq-chips"><span>${potN}</span>${packs.map(x => `<span>${x}</span>`).join('')}</div>`;
     emptyEl.hidden = true;
     document.getElementById('bq-cart').disabled = false; document.getElementById('bq-send').disabled = false;
@@ -603,6 +620,7 @@ const TITLES = {
 function setMode(m, preset) {
   state.mode = m; state.tab = TABS[m][0][0];
   document.getElementById('bq-title').textContent = TITLES[m][0]; document.getElementById('bq-lead').textContent = TITLES[m][1];
+  document.getElementById('bq-random').textContent = m === 'potted' ? 'Случайное растение' : m === 'box' ? 'Случайная коробка' : 'Случайный букет';
   renderTabs(); renderPresets(); applyMode();
   if (preset) applyPreset(PRESETS[m][Object.keys(PRESETS[m])[0]]); else { renderPanel(); renderSummary(); }
   try { history.replaceState(null, '', m === 'bouquet' ? location.pathname : '#' + m); } catch (e) {}
