@@ -423,3 +423,67 @@ export function frontBow(hex, s = 1) {
   });
   g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.scale.setScalar(s); return g;
 }
+
+/* ───────── коробка для горшечного растения: высокая, с окном, крышка закрывается ───────── */
+export const PLANT_BOXES = [
+  { id: 'S', cm: [20, 20, 20], note: 'суккуленты, кактусы' },
+  { id: 'M', cm: [25, 25, 35], note: 'растения до 30 см' },
+  { id: 'L', cm: [30, 30, 50], note: 'растения до 45 см' },
+  { id: 'XL', cm: [35, 35, 70], note: 'крупные растения' }
+];
+// подобрать размер: внутрь должны войти горшок и растение по высоте, листья могут чуть сложиться
+export function pickPlantBox(potDia, totalH, plantW) {
+  return PLANT_BOXES.find(b => b.cm[0] / 30 >= potDia * 1.15 && b.cm[0] / 30 >= plantW * 0.7 && b.cm[2] / 30 >= totalH * 1.03) || PLANT_BOXES[PLANT_BOXES.length - 1];
+}
+export function plantBox(sizeId = 'M', { closed = false, ribbon = '#C9A96E' } = {}) {
+  const B = PLANT_BOXES.find(b => b.id === sizeId) || PLANT_BOXES[1], w = B.cm[0] / 30, h = B.cm[2] / 30, g = new THREE.Group();
+  const bgT = tex('pbside', 256, 256, (gg, W, H) => { gg.fillStyle = C.forest; gg.fillRect(0, 0, W, H); grain(gg, W, H, 700, 0.025); });
+  const side = mapped(bgT, 0.7, { side: THREE.DoubleSide });
+  const ratio = h / w;
+  const frontT = tex('pbfront' + sizeId, 512, Math.round(512 * ratio), (gg, W, H) => {
+    gg.fillStyle = C.forest; gg.fillRect(0, 0, W, H); grain(gg, W, H, 1500, 0.025);
+    const wx = W * 0.14, wy = H * 0.1, ww = W * 0.72, wh = H - wy - Math.max(W * 0.3, H * 0.22);
+    gg.strokeStyle = C.gold; gg.lineWidth = 3; rr(gg, wx - 8, wy - 8, ww + 16, wh + 16, 26); gg.stroke();
+    gg.globalCompositeOperation = 'destination-out'; rr(gg, wx, wy, ww, wh, 20); gg.fill(); gg.globalCompositeOperation = 'source-over';
+    const by = wy + wh + (H - wy - wh) * 0.42;
+    logo(gg, 'cream', W / 2, by, W * 0.42); descriptor(gg, C.cream, W / 2, by + W * 0.085, W * 0.021);
+  });
+  const front = mat('pbfrontM' + sizeId, () => new THREE.MeshStandardMaterial({ map: frontT, roughness: 0.7, side: THREE.DoubleSide }));
+  // передняя стенка — настоящая геометрия с вырезом под окно (а не прозрачность текстуры)
+  const PX = 512, PH = Math.round(512 * ratio), wwx = PX * 0.14, wwy = PH * 0.1, www = PX * 0.72, wwh = PH - wwy - Math.max(PX * 0.3, PH * 0.22);
+  const toX = px => (px / PX - 0.5) * w, toY = py => (0.5 - py / PH) * h, cr = (20 / PX) * w;
+  const x0 = toX(wwx), x1 = toX(wwx + www), y1 = toY(wwy), y0 = toY(wwy + wwh);
+  const shp = new THREE.Shape(); shp.moveTo(-w / 2, -h / 2); shp.lineTo(w / 2, -h / 2); shp.lineTo(w / 2, h / 2); shp.lineTo(-w / 2, h / 2); shp.closePath();
+  const hole = new THREE.Path(); hole.moveTo(x0 + cr, y0); hole.lineTo(x1 - cr, y0); hole.quadraticCurveTo(x1, y0, x1, y0 + cr); hole.lineTo(x1, y1 - cr); hole.quadraticCurveTo(x1, y1, x1 - cr, y1); hole.lineTo(x0 + cr, y1); hole.quadraticCurveTo(x0, y1, x0, y1 - cr); hole.lineTo(x0, y0 + cr); hole.quadraticCurveTo(x0, y0, x0 + cr, y0); shp.holes.push(hole);
+  const frontG = new THREE.ShapeGeometry(shp, 8), fuv = frontG.attributes.uv, fpos = frontG.attributes.position;
+  for (let i = 0; i < fuv.count; i++) fuv.setXY(i, fpos.getX(i) / w + 0.5, fpos.getY(i) / h + 0.5);
+  const winH = y1 - y0, winW = x1 - x0, winY = (y0 + y1) / 2 + h / 2;
+  const wall = (mt, ww, x, z, ry, geo) => { const m = new THREE.Mesh(geo || new THREE.PlaneGeometry(ww, h), mt); m.position.set(x, h / 2, z); m.rotation.y = ry; m.castShadow = false; m.receiveShadow = false; m.userData.noShadow = true; g.add(m); };
+  wall(front, w, 0, w / 2, 0, frontG); wall(side, w, 0, -w / 2, Math.PI); wall(side, w, w / 2, 0, Math.PI / 2); wall(side, w, -w / 2, 0, -Math.PI / 2);
+  const bottom = new THREE.Mesh(new THREE.PlaneGeometry(w, w).rotateX(-Math.PI / 2), solid('#183325', 0.85)); bottom.position.y = 0.002; g.add(bottom);
+  // плёнка в окне
+  const film = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), mat('pbfilm', () => new THREE.MeshPhysicalMaterial({ color: '#FFFFFF', roughness: 0.05, transparent: true, opacity: 0.08, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false })));
+  film.position.set(0, winY, w / 2 - 0.004); g.add(film);
+  // мятая бумага-наполнитель на дне
+  const fg = new THREE.PlaneGeometry(w * 0.98, w * 0.98, 30, 30).rotateX(-Math.PI / 2), fp = fg.attributes.position;
+  for (let i = 0; i < fp.count; i++) { const x = fp.getX(i), z = fp.getZ(i); fp.setY(i, 0.03 + Math.abs(Math.sin(x * 37) * Math.sin(z * 29)) * 0.035); }
+  fg.computeVertexNormals();
+  const fillT = tex('filler', 256, 256, (gg, W, H) => { gg.fillStyle = C.cream; gg.fillRect(0, 0, W, H); grain(gg, W, H, 2500, 0.06); });
+  g.add(new THREE.Mesh(fg, mapped(fillT, 0.95, { side: THREE.DoubleSide })));
+  // крышка с тиснением и лентой
+  const lw = w * 1.03, lh = 0.07;
+  const lidT = tex('pblid', 512, 512, (gg, W, H) => { gg.fillStyle = C.forest; gg.fillRect(0, 0, W, H); grain(gg, W, H, 1500, 0.025); gg.strokeStyle = C.gold; gg.lineWidth = 3; gg.strokeRect(W * 0.07, H * 0.07, W * 0.86, H * 0.86); logo(gg, 'cream', W / 2, H * 0.47, W * 0.46); descriptor(gg, C.cream, W / 2, H * 0.6, W * 0.022); });
+  const lidG = new THREE.Group();
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, lw), [side, side, mapped(lidT, 0.6), solid('#183325', 0.85), side, side]); lid.userData.noShadow = true; lidG.add(lid);
+  const rm = ribbonMat(ribbon);
+  const band = new THREE.Mesh(new THREE.BoxGeometry(lw * 1.004, lh * 0.55, lw * 1.004), [rm, rm, HIDE, HIDE, rm, rm]); lidG.add(band);
+  const bow = frontBow(ribbon, 0.9 + w * 0.5); bow.position.set(0, 0, lw / 2 + 0.01); lidG.add(bow);
+  if (closed) lidG.position.y = h + lh / 2 - 0.02;
+  else { const tilt = 0.2; lidG.rotation.z = -(Math.PI / 2 - tilt); lidG.position.set(w / 2 + lh / 2 + (lw / 2) * Math.sin(tilt) + 0.03, (lw / 2) * Math.cos(tilt) + 0.01, -w * 0.05); lidG.rotation.y = -0.25; }
+  lidG.traverse(o => { o.userData.noShadow = true; });
+  // мягкий свет внутри, чтобы растение было видно через окно
+  const glow = new THREE.PointLight(0xfff4e6, 0.9, h * 2.2, 1.5); glow.position.set(0, h * 0.75, w * 0.2); g.add(glow);
+  g.add(lidG);
+  g.userData = { w, h, size: B };
+  return g;
+}
