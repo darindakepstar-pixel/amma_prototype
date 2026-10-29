@@ -22,7 +22,7 @@ export function loadBrand(base = '') {
   const imgs = Object.entries(FILES).map(([k, f]) => new Promise(res => {
     const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.onerror = () => res(); im.src = base + f;
   }));
-  const font = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('800 40px Manrope'), document.fonts.load('700 20px Manrope')]).catch(() => {}) : Promise.resolve();
+  const font = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('800 40px Manrope'), document.fonts.load('700 20px Manrope'), document.fonts.load('500 40px Caveat')]).catch(() => {}) : Promise.resolve();
   brandReady = Promise.all([...imgs, font]);
   return brandReady;
 }
@@ -383,4 +383,43 @@ export function pot(style = 'white', r = 0.2, label = null) {
   }
   g.userData = { h, r, soilY: h * 0.9 };
   return g;
+}
+
+/* ───────── открытка с текстом покупателя («подпишем от руки») ───────── */
+export function messageCard(message) {
+  const W = 640, H = 440, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H); grain(g, W, H, 1600, 0.02);
+  g.strokeStyle = '#E2E0DC'; g.lineWidth = 6; g.strokeRect(3, 3, W - 6, H - 6);
+  logo(g, 'graphite', W - 90, H - 40, 110);
+  g.fillStyle = C.graphite; g.textAlign = 'center'; g.textBaseline = 'middle';
+  let size = 64; const words = String(message).trim().split(/\s+/); let lines = [];
+  for (; size >= 30; size -= 4) {
+    g.font = `500 ${size}px Caveat, "Segoe Script", "Comic Sans MS", cursive`;
+    lines = []; let line = '';
+    words.forEach(wd => { const t = line ? line + ' ' + wd : wd; if (g.measureText(t).width > W - 90 && line) { lines.push(line); line = wd; } else line = t; });
+    if (line) lines.push(line);
+    if (lines.length * size * 1.15 <= H - 120) break;
+  }
+  lines = lines.slice(0, 7);
+  const y0 = (H - 50) / 2 - (lines.length - 1) * size * 0.575;
+  lines.forEach((ln, i) => g.fillText(ln, W / 2, y0 + i * size * 1.15));
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  const face = new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 }), edge = solid('#FFFFFF', 0.7);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.004), [edge, edge, edge, edge, face, solid('#F4F2EE', 0.75)]);
+  m.castShadow = true; m.userData.dispose = () => { t.dispose(); face.dispose(); m.geometry.dispose(); };
+  return m;
+}
+// бант спереди коробки: петли и хвосты в плоскости XY, смотрит на +Z
+export function frontBow(hex, s = 1) {
+  const g = new THREE.Group(), m = ribbonMat(hex);
+  const knot = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.014, 10, 24), m); knot.scale.set(1, 1.2, 0.8); g.add(knot);
+  [-1, 1].forEach(sd => {
+    const loop = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 10, 36), m);
+    loop.scale.set(1.5, 0.75, 0.5); loop.position.set(sd * 0.072, 0.008, -0.004); loop.rotation.z = sd * -0.25; g.add(loop);
+    const tg = new THREE.PlaneGeometry(0.035, 0.16, 1, 10), tp = tg.attributes.position;
+    for (let i = 0; i < tp.count; i++) { const y = tp.getY(i); tp.setZ(i, Math.sin(y * 18 + sd) * 0.006); }
+    tg.computeVertexNormals(); const tail = new THREE.Mesh(tg, m); tail.position.set(sd * 0.03, -0.085, 0.004); tail.rotation.z = sd * 0.3; g.add(tail);
+  });
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.scale.setScalar(s); return g;
 }
