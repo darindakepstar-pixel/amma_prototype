@@ -9,11 +9,11 @@ import { PLANTS, makePlant, potR } from './plants.js';
 /* ───────────── Каталог ───────────── */
 const FLOWERS = [
   { id: 'rose', name: 'Роза', note: '50–60 см', size: 1, variants: [['Красная', '#B3203A'], ['Розовая', '#F08CA0'], ['Кремовая', '#F3E3C8'], ['Белая', '#F7F5F0']] },
-  { id: 'peony', name: 'Пионовидная роза', note: 'Крупный бутон', size: 1.2, variants: [['Кремовая', '#F4E1C6'], ['Розовая', '#F3B4C2'], ['Коралловая', '#F39A86']] },
+  { id: 'peony', name: 'Пионовидная роза', note: 'Крупный бутон', size: 1.2, variants: [['Кремовая', '#F4E1C6'], ['Розовая', '#F3B4C2'], ['Коралловая', '#F39A86'], ['Оранжевая', '#F0823F'], ['Персиковая', '#F6BC98']] },
   { id: 'spray', name: 'Кустовая роза', note: '3–5 бутонов', size: 0.95, variants: [['Пудровая', '#E8B9B0'], ['Персиковая', '#F5BE94'], ['Белая', '#F7F5F0']] },
   { id: 'eustoma', name: 'Эустома', note: 'Нежная, как пион', size: 1, variants: [['Сиреневая', '#C9A8E0'], ['Белая', '#F7F5F0'], ['Пудровая', '#EBC3C8']] },
   { id: 'tulip', name: 'Тюльпан', note: 'Сезонный', size: 0.9, variants: [['Розовый', '#F28CA6'], ['Красный', '#D0283C'], ['Белый', '#F7F5F0'], ['Жёлтый', '#F6CF5A']] },
-  { id: 'carnation', name: 'Гвоздика', note: 'Стойкая', size: 0.85, variants: [['Бордо', '#7A1E2C'], ['Розовая', '#F29BB0'], ['Белая', '#F7F5F0']] },
+  { id: 'carnation', name: 'Гвоздика', note: 'Стойкая', size: 0.85, variants: [['Бордо', '#7A1E2C'], ['Розовая', '#F29BB0'], ['Белая', '#F7F5F0'], ['Кремовая', '#F2D9BE'], ['Красная', '#C21F32']] },
   { id: 'chrys', name: 'Хризантема кустовая', note: 'Ромашковидная', size: 1, variants: [['Белая', '#F7F5F0'], ['Жёлтая', '#F2D27A'], ['Сиреневая', '#D7B6E6']] },
   { id: 'alstro', name: 'Альстромерия', note: 'Стоит до 2 недель', size: 0.95, variants: [['Персиковая', '#F5A86E'], ['Розовая', '#F2A0B8'], ['Белая', '#F7F5F0']] },
   { id: 'hydrangea', name: 'Гортензия', note: 'Объём и воздух', size: 1.7, variants: [['Голубая', '#A9BFE6'], ['Белая', '#F2F2EC'], ['Розовая', '#F2BFD0']] }
@@ -22,7 +22,8 @@ const GREENS = [
   { id: 'euca', name: 'Эвкалипт', note: 'Серебристый', color: '#8FB3A0' },
   { id: 'pist', name: 'Фисташка', note: 'Сочная зелень', color: '#4F7F55' },
   { id: 'ruscus', name: 'Рускус', note: 'Тонкие листья', color: '#3F7A4A' },
-  { id: 'gyps', name: 'Гипсофила', note: 'Белое облако', color: '#FFFFFF' }
+  { id: 'gyps', name: 'Гипсофила', note: 'Белое облако', color: '#FFFFFF' },
+  { id: 'stipa', name: 'Ковыль', note: 'Пушистые перья', color: '#EFE7D6' }
 ];
 const WRAPS = [
   { id: 'amma-white', name: 'Белая АММА', paper: 'white', swatch: '#F7F6F2' },
@@ -31,6 +32,7 @@ const WRAPS = [
   { id: 'kraft', name: 'Крафт', color: '#D9C3A0', swatch: '#D9C3A0' },
   { id: 'blush', name: 'Пудровая', color: '#EED3D3', swatch: '#EED3D3' },
   { id: 'film', name: 'Прозрачная плёнка', color: '#DDEAF0', swatch: '#DDEAF0' },
+  { id: 'vase', name: 'В вазе (банч)', vase: true, swatch: '#E4EEF0' },
   { id: 'none', name: 'Без упаковки', color: null, swatch: null }
 ];
 const BOXES = [
@@ -223,7 +225,7 @@ function layout() {
 const UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3(), tmpD = new THREE.Vector3();
 function easeOutBack(x) { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); }
 function animateStems(now) {
-  const inBox = state.mode === 'box';
+  const inBox = state.mode === 'box', vase = isVase();
   for (const [k, o] of live) {
     let sc;
     if (o.dying) {
@@ -244,6 +246,7 @@ function animateStems(now) {
     if (o.green) o.obj.position.copy(BIND).addScaledVector(tmpV, 0.12);
     o.obj.scale.setScalar(Math.max(0.001, sc) * (o.green ? 1.3 : o.size > 1.3 ? 1.1 : 2.45));
     const bottom = tmpV.copy(BIND).addScaledVector(dir, -0.62);
+    if (vase) { const rr = Math.hypot(bottom.x, bottom.z), mx = 0.12; if (rr > mx) { bottom.x *= mx / rr; bottom.z *= mx / rr; } bottom.y = Math.max(bottom.y, -0.27); }
     const len = o.cur.distanceTo(bottom) - (o.green ? 0.3 : 0.04);
     o.stem.position.copy(bottom);
     o.stem.quaternion.setFromUnitVectors(UP, tmpD.copy(o.cur).sub(bottom).normalize());
@@ -311,8 +314,19 @@ function updateWrap() {
       band.position.y = y0 + h / 2; band.castShadow = true; wrapGroup.add(band);
     }
   }
+  if (w && w.vase) { buildVase(); return; }
   ribbonBow(wrapGroup, BIND.y, ribbonColor);
 }
+// стеклянная ваза с водой: банч стоит, стебли видны сквозь стекло
+function buildVase() {
+  const y0 = -0.31, y1 = BIND.y + 0.03, pts = [[0, y0], [0.15, y0], [0.165, y0 + 0.02], [0.175, y0 + 0.3], [0.17, y1 - 0.12], [0.155, y1]].map(p => new THREE.Vector2(p[0], p[1]));
+  const glass = new THREE.MeshPhysicalMaterial({ color: '#EAF4F2', roughness: 0.04, metalness: 0, transparent: true, opacity: 0.22, clearcoat: 1, clearcoatRoughness: 0.05, side: THREE.DoubleSide, depthWrite: false, envMapIntensity: 1.4 });
+  const v = new THREE.Mesh(new THREE.LatheGeometry(pts, 64), glass); v.renderOrder = 2; wrapGroup.add(v);
+  const rimM = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.004, 8, 64), new THREE.MeshPhysicalMaterial({ color: '#DDEBE8', roughness: 0.05, transparent: true, opacity: 0.5, clearcoat: 1 })); rimM.rotation.x = Math.PI / 2; rimM.position.y = y1; wrapGroup.add(rimM);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.025, 48), new THREE.MeshPhysicalMaterial({ color: '#D5E6E2', roughness: 0.05, transparent: true, opacity: 0.45, clearcoat: 1 })); base.position.y = y0 + 0.0125; wrapGroup.add(base);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(0.168, 0.162, 0.32, 48), new THREE.MeshPhysicalMaterial({ color: '#CFE3E6', roughness: 0.02, transparent: true, opacity: 0.18, depthWrite: false })); water.position.y = y0 + 0.025 + 0.16; water.renderOrder = 1; wrapGroup.add(water);
+}
+const isVase = () => state.mode === 'bouquet' && state.wrap === 'vase';
 
 /* ───────────── Коробка для цветов ───────────── */
 let boxKey = '';
@@ -431,7 +445,7 @@ function resize() {
 new ResizeObserver(resize).observe(stageEl); resize();
 function frame(now) {
   if (window.__bqPause) { requestAnimationFrame(frame); return; }
-  const t = now / 1000, bob = reduce ? 0 : Math.sin(t * 0.9);
+  const t = now / 1000, bob = reduce || isVase() ? 0 : Math.sin(t * 0.9);
   floatGroup.position.y = bob * (state.mode === 'bouquet' ? 0.05 : 0.03);
   const base = state.mode === 'bouquet' ? 0.8 + domeR : state.mode === 'box' ? 0.6 + (boxInfo ? Math.max(boxInfo.rx, boxInfo.rz) * 1.6 : 0.6) : 1.3;
   shadow.scale.setScalar((1 - bob * 0.08) * base);
@@ -586,7 +600,7 @@ function renderSummary() {
   GREENS.forEach(g => { const n = state.greens[g.id]; if (n) parts.push(`${g.name} × ${n}`); });
   const n = total(), kinds = Object.keys(state.flowers).length;
   const cardChip = state.card.trim() ? ['Открытка: «' + (state.card.trim().length > 28 ? state.card.trim().slice(0, 28) + '…' : state.card.trim()) + '»'] : [];
-  const packChips = state.mode === 'box' ? [BOXES.find(x => x.id === state.box).name, 'Лента: ' + RIBBONS[state.ribbon][0].toLowerCase(), ...cardChip] : [WRAPS.find(x => x.id === state.wrap).name, ...(state.band && state.wrap !== 'none' && state.wrap !== 'film' ? ['Бандероль АММА'] : []), 'Лента: ' + RIBBONS[state.ribbon][0].toLowerCase(), ...cardChip];
+  const packChips = state.mode === 'box' ? [BOXES.find(x => x.id === state.box).name, 'Лента: ' + RIBBONS[state.ribbon][0].toLowerCase(), ...cardChip] : state.wrap === 'vase' ? ['В вазе (банч)', ...cardChip] : [WRAPS.find(x => x.id === state.wrap).name, ...(state.band && state.wrap !== 'none' && state.wrap !== 'film' ? ['Бандероль АММА'] : []), 'Лента: ' + RIBBONS[state.ribbon][0].toLowerCase(), ...cardChip];
   summaryEl.innerHTML = `<div class="bq-total"><span>${n ? `${n} ${plural(n, 'стебель', 'стебля', 'стеблей')} · ${kinds} ${plural(kinds, 'вид', 'вида', 'видов')} цветов` : (state.mode === 'box' ? 'Коробка пока пустая' : 'Букет пока пустой')}</span><b>[сумма] ₽</b></div>
     <div class="bq-chips">${parts.map(p => `<span>${p}</span>`).join('')}${packChips.map(p => `<span>${p}</span>`).join('')}</div>`;
   emptyEl.hidden = n > 0;
@@ -646,9 +660,16 @@ document.getElementById('bq-send').onclick = () => toast(state.mode === 'potted'
 
 loadBrand().then(() => {
   const start = (location.hash || '').replace('#', '');
-  setMode(TABS[start] ? start : 'bouquet', true);
+  let cfg = null;
+  if (start.startsWith('cfg=')) { try { cfg = JSON.parse(decodeURIComponent(start.slice(4))); } catch (e) { cfg = null; } }
+  if (cfg && TABS[cfg.mode]) {
+    if (cfg.mode === 'potted') state.giftClosed = !!cfg.giftClosed;
+    if (cfg.card) state.card = String(cfg.card).slice(0, 160);
+    setMode(cfg.mode, false); applyPreset(Object.assign({ flowers: {}, greens: {}, ribbon: 0, pack: [] }, cfg));
+    try { history.replaceState(null, '', cfg.mode === 'bouquet' ? location.pathname : '#' + cfg.mode); } catch (e) {}
+  } else setMode(TABS[start] ? start : 'bouquet', true);
   requestAnimationFrame(frame);
 });
 // для скриншотов: дорисовать всё сразу, без анимации
 function renderNow() { const t = performance.now() + 5000; for (let i = 0; i < 80; i++) { animateStems(t); controls.target.lerp(camTarget, 0.2); const d = camera.position.distanceTo(controls.target); camera.position.sub(controls.target).setLength(d + (fitDist - d) * 0.2).add(controls.target); } controls.update(); renderer.render(scene, camera); }
-window.__bq = { renderNow, state, live, renderer, setMode, scene, camera, applyPreset, buildPlant, layout, controls, PLANTS };
+window.__bq = { floatGroup, renderNow, state, live, renderer, setMode, scene, camera, applyPreset, buildPlant, layout, controls, PLANTS };

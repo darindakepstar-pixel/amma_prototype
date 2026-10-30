@@ -100,4 +100,4 @@ document.getElementById('sc-auto').onclick = e => { controls.autoRotate = !contr
 document.getElementById('sc-photo').onclick = () => { renderer.render(scene, camera); const a = document.createElement('a'); a.download = 'upakovka-amma.png'; a.href = canvas.toDataURL('image/png'); a.click(); };
 loadBrand().then(() => { show((location.hash || '').replace('#', '') && ITEMS.find(x => '#' + x.id === location.hash) ? location.hash.slice(1) : 'gift'); requestAnimationFrame(frame); });
 function renderNow() { for (let i = 0; i < 60; i++) { controls.target.lerp(target, 0.25); const d = camera.position.distanceTo(controls.target); camera.position.sub(controls.target).setLength(d + (fit - d) * 0.25).add(controls.target); } controls.update(); renderer.render(scene, camera); }
-window.__sc = { renderNow, show, ITEMS, renderer };
+window.__sc = { renderNow, show, ITEMS, renderer, scene, camera, holder, controls };

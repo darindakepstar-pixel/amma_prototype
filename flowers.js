@@ -480,6 +480,24 @@ function ruscus(acc, R) {
     prev = p;
   }
 }
+// Ковыль: тонкие дуги с пушистыми кремовыми перьями
+function stipa(acc, R) {
+  const fm = petalMat('stipa', '#EFE7D6', { veins: 0 }, { sheen: 0.6, roughness: 0.75 });
+  const hair = petal({ len: 0.05, wid: 0.004, shape: 'lance', cup: 0.1, bend0: 0.2, bend: 0.5, su: 2, sv: 4 });
+  for (let k = 0; k < 7; k++) {
+    const a = k * GOLD + R() * 0.4, lean = 0.15 + R() * 0.25, L = 0.5 + R() * 0.15;
+    let prev = new THREE.Vector3(0, 0, 0);
+    for (let i = 1; i <= 16; i++) {
+      const t = i / 16, r = Math.sin(t * 1.4) * lean * L, p = new THREE.Vector3(Math.cos(a) * r, L * t - t * t * lean * 0.25, Math.sin(a) * r);
+      stemPiece(acc, prev, p, 0.0012, '#B8B290');
+      if (i > 5) for (let q = 0; q < 3; q++) {
+        const d = p.clone().sub(prev).normalize(), m = alongM(p, new THREE.Vector3(d.x + (R() - 0.5) * 0.8, d.y, d.z + (R() - 0.5) * 0.8), 1, R() * 6);
+        acc.add(fm, hair, m, vary(R, 0.05));
+      }
+      prev = p;
+    }
+  }
+}
 // Гипсофила: ветвистое облако мелких белых цветков
 function gypsophila(acc, R) {
   const fl = petalMat('gyps', '#FBFAF6', { veins: 0.1 }, { sheen: 0.3, roughness: 0.8 }), len = 0.5;
@@ -516,7 +534,7 @@ const sprigCache = new Map();
 export function greenSprig(kind) {
   if (!sprigCache.has(kind)) {
     const acc = new Acc(), R = rng(kind.length * 13 + 5);
-    ({ euca: eucalyptus, pist: pistacia, ruscus, gyps: gypsophila }[kind])(acc, R);
+    ({ euca: eucalyptus, pist: pistacia, ruscus, gyps: gypsophila, stipa }[kind])(acc, R);
     sprigCache.set(kind, acc.build());
   }
   return sprigCache.get(kind).clone();
