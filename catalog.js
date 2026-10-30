@@ -12,7 +12,7 @@ function toast(msg) { const t = document.getElementById('cat-toast'); t.textCont
 function spinner(box, it) {
   let f = 0, playing = null, drag = null, loaded = false;
   const set = n => { f = ((Math.round(n) % FR) + FR) % FR; box.style.backgroundPosition = (f / (FR - 1) * 100) + '% 0'; };
-  const load = () => { if (loaded) return; loaded = true; box.style.backgroundImage = `url(cat/${it.id}.webp)`; };
+  const load = () => { if (loaded) return; loaded = true; box.style.backgroundImage = `url(${it.id}.webp)`; };
   const play = () => { if (reduce || playing) return; let last = 0; const tick = t => { if (!playing) return; if (t - last > 70) { set(f + 1); last = t; } playing = requestAnimationFrame(tick); }; playing = requestAnimationFrame(tick); };
   const stop = () => { cancelAnimationFrame(playing); playing = null; };
   box.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') play(); });
