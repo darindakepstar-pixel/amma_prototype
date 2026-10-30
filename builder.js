@@ -5,6 +5,7 @@ import { RoomEnvironment } from './RoomEnvironment.js';
 import { makeHead, greenSprig, stemMaterial, paperMaterial } from './flowers.js';
 import { loadBrand, wrapPaperTex, bandTex, hatbox, giftBox, boxBag, bag, sleeve, pickTag, card, pot, ribbonMat, sticker, messageCard, frontBow, plantBox, pickPlantBox, PLANT_BOXES } from './packaging.js';
 import { PLANTS, makePlant, potR } from './plants.js';
+import { P as PR, priceOf, fmt, plantPrice, potPrice } from './prices.js';
 
 /* ───────────── Каталог ───────────── */
 const FLOWERS = [
@@ -471,10 +472,10 @@ function stepper(label, value, onMinus, onPlus) {
   m.disabled = value === 0; p.disabled = total() >= MAX_STEMS;
   m.onclick = onMinus; p.onclick = onPlus; w.append(m, v, p); return w;
 }
-function choiceGrid(label, items, current, onPick, visual) {
+function choiceGrid(label, items, current, onPick, visual, price) {
   const grid = el('div', { class: 'bq-grid', role: 'radiogroup', 'aria-label': label });
   items.forEach(it => {
-    const b = el('button', { type: 'button', role: 'radio', 'aria-checked': String(current === it.id), class: 'bq-card' + (current === it.id ? ' is-on' : '') }, visual(it) + `<span>${it.name}</span>` + (it.note ? `<small class="bq-note">${it.note}</small>` : ''));
+    const b = el('button', { type: 'button', role: 'radio', 'aria-checked': String(current === it.id), class: 'bq-card' + (current === it.id ? ' is-on' : '') }, visual(it) + `<span>${it.name}</span>` + (it.note ? `<small class="bq-note">${it.note}</small>` : '') + (price ? `<small class="bq-note"><b>${price(it)}</b></small>` : ''));
     b.onclick = () => onPick(it.id); grid.appendChild(b);
   });
   return grid;
@@ -513,7 +514,7 @@ function renderPanel() {
     FLOWERS.forEach(f => {
       const vi = state.picked[f.id], key = f.id + ':' + vi, n = state.flowers[key] || 0;
       const row = el('div', { class: 'bq-row' });
-      const info = el('div', { class: 'bq-info' }, `<span class="bq-name">${f.name}</span><span class="bq-note">${f.note} · [цена] ₽/шт</span>`);
+      const info = el('div', { class: 'bq-info' }, `<span class="bq-name">${f.name}</span><span class="bq-note">${f.note} · ${fmt(PR.flower[f.id])}/шт</span>`);
       const sw = el('div', { class: 'bq-swatches', role: 'radiogroup', 'aria-label': 'Цвет: ' + f.name });
       f.variants.forEach((v, i) => {
         const cnt = state.flowers[f.id + ':' + i] || 0;
@@ -528,19 +529,19 @@ function renderPanel() {
   } else if (t === 'greens') {
     GREENS.forEach(g => {
       const n = state.greens[g.id] || 0, row = el('div', { class: 'bq-row' });
-      row.append(el('div', { class: 'bq-info' }, `<span class="bq-name"><span class="bq-dot" style="--c:${g.color}"></span>${g.name}</span><span class="bq-note">${g.note} · [цена] ₽/ветка</span>`),
+      row.append(el('div', { class: 'bq-info' }, `<span class="bq-name"><span class="bq-dot" style="--c:${g.color}"></span>${g.name}</span><span class="bq-note">${g.note} · ${fmt(PR.green[g.id])}/ветка</span>`),
         stepper(g.name, n, () => change('greens', g.id, -1), () => change('greens', g.id, 1)));
       panel.appendChild(row);
     });
   } else if (t === 'wrap') {
     panel.appendChild(choiceGrid('Упаковка', WRAPS, state.wrap, id => { state.wrap = id; updateWrap(); renderPanel(); renderSummary(); },
-      w => `<span class="bq-paper${w.paper ? ' bq-paper--amma bq-paper--' + w.paper : ''}" style="--c:${w.swatch || 'transparent'}">${w.swatch ? '' : '—'}</span>`));
+      w => `<span class="bq-paper${w.paper ? ' bq-paper--amma bq-paper--' + w.paper : ''}" style="--c:${w.swatch || 'transparent'}">${w.swatch ? '' : '—'}</span>`, w => w.id === 'vase' ? 'пачкой, ваза не входит' : PR.wrap[w.id] ? fmt(PR.wrap[w.id]) : 'бесплатно'));
     const lab = el('label', { class: 'bq-toggle' }, `<input type="checkbox" ${state.band ? 'checked' : ''}> <span><b>Бандероль АММА</b><small class="bq-note">Графитовая полоса со знаком поверх бумаги</small></span>`);
     lab.querySelector('input').onchange = e => { state.band = e.target.checked; updateWrap(); renderSummary(); };
     panel.appendChild(lab);
   } else if (t === 'box') {
     panel.appendChild(choiceGrid('Коробка', BOXES, state.box, id => { state.box = id; boxKey = ''; layout(); renderPanel(); renderSummary(); },
-      b => `<span class="bq-boxicon bq-boxicon--${b.type}" style="--c:${b.swatch}"></span>`));
+      b => `<span class="bq-boxicon bq-boxicon--${b.type}" style="--c:${b.swatch}"></span>`, b => fmt(PR.box[b.id])));
     panel.appendChild(el('p', { class: 'bq-note', style: 'margin:12px 4px 0;line-height:1.5' }, 'Цветы ставятся во влажную флористическую губку — композиция стоит без вазы. Размер коробки подбирается под количество цветов.'));
   } else if (t === 'plant') {
     const groups = ['Все', ...new Set(PLANTS.map(p => p.group))];
@@ -549,7 +550,7 @@ function renderPanel() {
     panel.appendChild(gr);
     PLANTS.filter(p => state.group === 'Все' || p.group === state.group).forEach(p => {
       const on = state.plant === p.id, row = el('div', { class: 'bq-row' + (on ? ' is-on' : '') });
-      const info = el('div', { class: 'bq-info' }, `<span class="bq-name">${p.name}</span><span class="bq-note">${p.note} · [цена] ₽</span>`);
+      const info = el('div', { class: 'bq-info' }, `<span class="bq-name">${p.name}</span><span class="bq-note">${p.note} · от ${fmt(plantPrice(p.id, p.sizes[0]))}</span>`);
       const sizes = el('div', { class: 'bq-swatches', role: 'radiogroup', 'aria-label': 'Размер горшка: ' + p.name });
       p.sizes.forEach(cm => { const sel = on && state.size === cm; const b = el('button', { type: 'button', role: 'radio', 'aria-checked': String(sel), class: 'bq-size' + (sel ? ' is-on' : '') }, cm + ' см'); b.onclick = () => { state.plant = p.id; state.size = cm; buildPlant(); renderPanel(); renderSummary(); }; sizes.appendChild(b); });
       info.appendChild(sizes);
@@ -559,11 +560,11 @@ function renderPanel() {
     });
   } else if (t === 'pot') {
     panel.appendChild(choiceGrid('Кашпо', POTS, state.pot, id => { state.pot = id; buildPlant(); renderPanel(); renderSummary(); },
-      p => `<span class="bq-potic" style="--c:${p.swatch}"></span>`));
+      p => `<span class="bq-potic" style="--c:${p.swatch}"></span>`, p => potPrice(p.id, state.size) ? fmt(potPrice(p.id, state.size)) : 'входит в цену'));
   } else if (t === 'pack') {
     panel.appendChild(el('p', { class: 'bq-note', style: 'margin:0 4px 6px' }, 'Отметьте, что положить вместе с растением:'));
     PACK.forEach(a => {
-      const lab = el('label', { class: 'bq-toggle' }, `<input type="checkbox" ${state.pack.has(a.id) ? 'checked' : ''}> <span><b>${a.name}</b><small class="bq-note">${a.note} · [цена] ₽</small></span>`);
+      const lab = el('label', { class: 'bq-toggle' }, `<input type="checkbox" ${state.pack.has(a.id) ? 'checked' : ''}> <span><b>${a.name}</b><small class="bq-note">${a.note} · ${a.id === 'gift' ? 'от ' + fmt(PR.giftBox.S) : PR.pack[a.id] ? fmt(PR.pack[a.id]) : 'бесплатно'}</small></span>`);
       lab.querySelector('input').onchange = e => { e.target.checked ? state.pack.add(a.id) : state.pack.delete(a.id); buildPlant(); renderPanel(); renderSummary(); };
       panel.appendChild(lab);
       if (a.id === 'gift' && state.pack.has('gift')) {
@@ -588,7 +589,7 @@ function renderSummary() {
   if (state.mode === 'potted') {
     const p = PLANTS.find(x => x.id === state.plant), potN = POTS.find(x => x.id === state.pot).name;
     const packs = PACK.filter(a => state.pack.has(a.id)).map(a => a.name + (a.id === 'ribbon' ? ': ' + RIBBONS[state.ribbon][0].toLowerCase() : a.id === 'gift' && plantBoxSize ? ' ' + plantBoxSize.id + ' · ' + plantBoxSize.cm.join('×') + ' см' : ''));
-    summaryEl.innerHTML = `<div class="bq-total"><span>${p.name} · горшок ${state.size} см</span><b>[сумма] ₽</b></div><div class="bq-chips"><span>${potN}</span>${packs.map(x => `<span>${x}</span>`).join('')}</div>`;
+    summaryEl.innerHTML = `<div class="bq-total"><span>${p.name} · горшок ${state.size} см</span><b>${fmt(priceOf(state, plantBoxSize && plantBoxSize.id))}</b></div><div class="bq-chips"><span>${potN}</span>${packs.map(x => `<span>${x}</span>`).join('')}</div>`;
     emptyEl.hidden = true;
     document.getElementById('bq-cart').disabled = false; document.getElementById('bq-send').disabled = false;
     document.getElementById('bq-send').textContent = 'Спросить флориста';
@@ -601,7 +602,8 @@ function renderSummary() {
   const n = total(), kinds = Object.keys(state.flowers).length;
   const cardChip = state.card.trim() ? ['Открытка: «' + (state.card.trim().length > 28 ? state.card.trim().slice(0, 28) + '…' : state.card.trim()) + '»'] : [];
   const packChips = state.mode === 'box' ? [BOXES.find(x => x.id === state.box).name, 'Лента: ' + RIBBONS[state.ribbon][0].toLowerCase(), ...cardChip] : state.wrap === 'vase' ? ['В вазе (банч)', ...cardChip] : [WRAPS.find(x => x.id === state.wrap).name, ...(state.band && state.wrap !== 'none' && state.wrap !== 'film' ? ['Бандероль АММА'] : []), 'Лента: ' + RIBBONS[state.ribbon][0].toLowerCase(), ...cardChip];
-  summaryEl.innerHTML = `<div class="bq-total"><span>${n ? `${n} ${plural(n, 'стебель', 'стебля', 'стеблей')} · ${kinds} ${plural(kinds, 'вид', 'вида', 'видов')} цветов` : (state.mode === 'box' ? 'Коробка пока пустая' : 'Букет пока пустой')}</span><b>[сумма] ₽</b></div>
+  if (n && state.wrap !== 'vase' || n && state.mode === 'box') packChips.push('Сборка флористом ' + fmt(state.mode === 'box' ? PR.assembly.box : PR.assembly.bouquet));
+  summaryEl.innerHTML = `<div class="bq-total"><span>${n ? `${n} ${plural(n, 'стебель', 'стебля', 'стеблей')} · ${kinds} ${plural(kinds, 'вид', 'вида', 'видов')} цветов` : (state.mode === 'box' ? 'Коробка пока пустая' : 'Букет пока пустой')}</span><b>${n ? fmt(priceOf(state)) : '0\u00A0₽'}</b></div>
     <div class="bq-chips">${parts.map(p => `<span>${p}</span>`).join('')}${packChips.map(p => `<span>${p}</span>`).join('')}</div>`;
   emptyEl.hidden = n > 0;
   emptyEl.textContent = state.mode === 'box' ? 'Коробка пока пустая — добавьте цветы справа' : 'Букет пока пустой — добавьте первый цветок справа';

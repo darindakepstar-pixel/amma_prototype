@@ -1,5 +1,6 @@
 // АММА · 3D-каталог: карточки с вращением 360° по кадрам · design & code: Дария Кромберг
 import { GROUPS, CATALOG } from './catalog-items.js';
+import { priceOf, fmt } from './prices.js';
 const FR = 24;
 const list = document.getElementById('cat-list'), tabs = document.getElementById('cat-tabs');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -40,11 +41,11 @@ GROUPS.forEach(g => {
     const card = el('article', { class: 'cat-card glass' });
     const spin = el('div', { class: 'cat-spin', role: 'img', tabindex: '0', 'aria-label': `${it.name} — 3D, поверните стрелками или потяните` }, '<span class="cat-360" aria-hidden="true">↻ 360°</span>');
     spin._sp = spinner(spin, it); if (io) io.observe(spin); else spin._sp.load();
-    const body = el('div', { class: 'cat-body' }, `<span class="cat-name">${it.name}</span><span class="cat-comp">${it.comp}</span>${it.group === 'pack' ? '<span class="cat-comp" style="display:block">Цена — по запросу</span>' : '<span class="cat-price">[цена] ₽</span>'}`);
+    const body = el('div', { class: 'cat-body' }, `<span class="cat-name">${it.name}</span><span class="cat-comp">${it.comp}</span><span class="cat-price">${it.priceText ? it.priceText.replace(/ (?=₽)/, '\u00A0') : fmt(priceOf(it.cfg))}</span>`);
     const act = el('div', { class: 'cat-act' });
     const a = el('a', { class: 'cat-btn cat-btn--line', href: linkFor(it) }, linkText(it));
-    const buy = el('button', { type: 'button', class: 'cat-btn cat-btn--dark' }, it.group === 'pack' ? 'Запросить' : 'В корзину');
-    buy.onclick = () => toast(it.group === 'pack' ? 'Запрос отправлен — менеджер пришлёт цены и наличие.' : `«${it.name}» добавлен в корзину.`);
+    const buy = el('button', { type: 'button', class: 'cat-btn cat-btn--dark' }, 'В корзину');
+    buy.onclick = () => toast(`«${it.name}» — в корзине.`);
     act.append(a, buy); card.append(spin, body, act); grid.append(card);
   });
   sec.append(grid); list.append(sec); sections[g.id] = sec;
